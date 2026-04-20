@@ -1,7 +1,6 @@
 package com.magentamause.cosydomainprovider.model.action;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,9 +18,6 @@ public class UserCreationDto {
     @Email(message = "Email should be valid")
     private String email;
 
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
-            message =
-                    "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character")
+    @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
 }

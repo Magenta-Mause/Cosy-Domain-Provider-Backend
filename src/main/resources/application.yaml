@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: cosy-domain-provider
+
+aws:
+  region: eu-central-1
+  route53:
+    hosted-zone-id: ${AWS_HOSTED_ZONE_ID}
+    domain: ${AWS_DOMAIN}
+    default-ttl: 300

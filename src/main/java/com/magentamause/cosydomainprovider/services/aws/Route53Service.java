@@ -1,4 +1,4 @@
-package com.magentamause.cosydomainprovider.services.dns.aws;
+package com.magentamause.cosydomainprovider.services.aws;
 
 import com.magentamause.cosydomainprovider.configuration.properties.aws.Route53Properties;
 import com.magentamause.cosydomainprovider.model.dns.DnsEntry;

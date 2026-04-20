@@ -1,0 +1,20 @@
+services:
+  cosy-dev-postgres:
+    image: postgres:16-alpine
+    container_name: cosy-domain-provider-dev-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=cosy
+      - POSTGRES_USER=cosy
+      - POSTGRES_PASSWORD=cosy
+    volumes:
+      - cosy-domain-provider-dev-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cosy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  cosy-domain-provider-dev-postgres-data:

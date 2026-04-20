@@ -1,7 +1,7 @@
 package com.magentamause.cosydomainprovider.controller;
 
 import com.magentamause.cosydomainprovider.model.dns.DnsEntry;
-import com.magentamause.cosydomainprovider.services.dns.aws.Route53Service;
+import com.magentamause.cosydomainprovider.services.aws.Route53Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -4,11 +4,10 @@ import com.magentamause.cosydomainprovider.controller.v1.schema.UserApi;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.core.UserService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,6 +21,6 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<UserDto> createUser(UserCreationDto userCreationDto) {
-        return ResponseEntity.ok(userService.createUser(userCreationDto.toEntity()).toDto());
+        return ResponseEntity.ok(userService.createUser(userCreationDto).toDto());
     }
 }

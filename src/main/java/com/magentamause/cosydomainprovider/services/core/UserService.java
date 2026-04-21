@@ -45,6 +45,16 @@ public class UserService {
                                         "User with username " + username + " not found"));
     }
 
+    public UserEntity getUserByEmail(String email) {
+        return userRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "User with email " + email + " not found"));
+    }
+
     private UserEntity saveUser(UserEntity user) {
         return userRepository.save(user);
     }

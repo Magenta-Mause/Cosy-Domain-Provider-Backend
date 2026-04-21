@@ -20,10 +20,10 @@ public class AuthorizationService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
-    public String loginUser(String username, String plainPassword) {
+    public String loginUser(String email, String plainPassword) {
         UserEntity user;
         try {
-            user = userService.getUserByUsername(username);
+            user = userService.getUserByEmail(email);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }

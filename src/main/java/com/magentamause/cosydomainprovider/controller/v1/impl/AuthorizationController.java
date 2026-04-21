@@ -32,7 +32,7 @@ public class AuthorizationController implements AuthorizationApi {
     @Override
     public ResponseEntity<LoginResponseDto> login(LoginDto loginDto, TokenMode tokenMode) {
         String refreshToken =
-                authorizationService.loginUser(loginDto.getUsername(), loginDto.getPassword());
+                authorizationService.loginUser(loginDto.getEmail(), loginDto.getPassword());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.OK);
     }
 

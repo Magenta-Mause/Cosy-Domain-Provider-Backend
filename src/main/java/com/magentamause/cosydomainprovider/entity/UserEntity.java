@@ -28,8 +28,15 @@ public class UserEntity {
 
     private String accessToken;
     private boolean isVerified;
+    private boolean needsPasswordSetup;
 
     public UserDto toDto() {
-        return UserDto.builder().uuid(uuid).username(username).email(email).isVerified(isVerified).build();
+        return UserDto.builder()
+                .uuid(uuid)
+                .username(username)
+                .email(email)
+                .isVerified(isVerified)
+                .needsPasswordSetup(needsPasswordSetup)
+                .build();
     }
 }

@@ -10,4 +10,5 @@ public class UserDto {
     private final String username;
     private final String email;
     private final boolean isVerified;
+    private final boolean needsPasswordSetup;
 }

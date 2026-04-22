@@ -13,6 +13,7 @@ public class JwtTokenBody {
     private String userId;
     private String email;
     private boolean isVerified;
+    private boolean needsPasswordSetup;
     private TokenType tokenType;
 
     public enum TokenType {
@@ -35,6 +36,7 @@ public class JwtTokenBody {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .isVerified(user.isVerified())
+                .needsPasswordSetup(user.isNeedsPasswordSetup())
                 .build();
     }
 
@@ -46,6 +48,7 @@ public class JwtTokenBody {
         if (email != null) map.put("email", email);
         if (tokenType == TokenType.IDENTITY_TOKEN) {
             map.put("isVerified", isVerified);
+            map.put("needsPasswordSetup", needsPasswordSetup);
         }
         return map;
     }

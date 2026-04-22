@@ -2,6 +2,7 @@ package com.magentamause.cosydomainprovider.controller.v1.schema;
 
 import com.magentamause.cosydomainprovider.model.action.EmailVerificationDto;
 import com.magentamause.cosydomainprovider.model.action.LoginDto;
+import com.magentamause.cosydomainprovider.model.action.SetPasswordDto;
 import com.magentamause.cosydomainprovider.model.action.TokenMode;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
@@ -33,4 +34,7 @@ public interface AuthorizationApi {
 
     @PostMapping("/resend-verification")
     ResponseEntity<Void> resendVerification();
+
+    @PostMapping("/set-password")
+    ResponseEntity<Void> setPassword(@Valid @RequestBody SetPasswordDto dto);
 }

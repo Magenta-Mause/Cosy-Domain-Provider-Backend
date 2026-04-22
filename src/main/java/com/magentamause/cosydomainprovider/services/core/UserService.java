@@ -111,6 +111,13 @@ public class UserService {
         saveUser(user);
     }
 
+    public void setPassword(String uuid, String plainPassword) {
+        UserEntity user = getUserByUuid(uuid);
+        user.setPasswordHash(passwordEncoder.encode(plainPassword));
+        user.setNeedsPasswordSetup(false);
+        saveUser(user);
+    }
+
     private static String generateAccessToken() {
         return IntStream.range(0, ACCESS_TOKEN_LENGTH)
                 .mapToObj(i -> String.valueOf(ACCESS_TOKEN_LETTERS.charAt(SECURE_RANDOM.nextInt(ACCESS_TOKEN_LETTERS.length()))))

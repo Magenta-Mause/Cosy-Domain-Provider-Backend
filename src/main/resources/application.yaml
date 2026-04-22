@@ -33,6 +33,34 @@ client:
     url: ${MAIL_API_URL}
     api-key: ${MAIL_API_KEY}
 
+oauth:
+  frontend-url: http://localhost:5173
+  providers:
+    google:
+      client-id: ${OAUTH_GOOGLE_CLIENT_ID}
+      client-secret: ${OAUTH_GOOGLE_CLIENT_SECRET}
+      authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+      token-uri: https://oauth2.googleapis.com/token
+      user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+      scope: openid email profile
+      callback-uri: http://localhost:8080/api/v1/auth/oauth/google/callback
+    github:
+      client-id: ${OAUTH_GITHUB_CLIENT_ID}
+      client-secret: ${OAUTH_GITHUB_CLIENT_SECRET}
+      authorization-uri: https://github.com/login/oauth/authorize
+      token-uri: https://github.com/login/oauth/access_token
+      user-info-uri: https://api.github.com/user
+      scope: read:user,user:email
+      callback-uri: http://localhost:8080/api/v1/auth/oauth/github/callback
+    discord:
+      client-id: ${OAUTH_DISCORD_CLIENT_ID}
+      client-secret: ${OAUTH_DISCORD_CLIENT_SECRET}
+      authorization-uri: https://discord.com/api/oauth2/authorize
+      token-uri: https://discord.com/api/oauth2/token
+      user-info-uri: https://discord.com/api/users/@me
+      scope: identify email
+      callback-uri: http://localhost:8080/api/v1/auth/oauth/discord/callback
+
 subdomain:
   max-per-user: 5
   reserved-labels:

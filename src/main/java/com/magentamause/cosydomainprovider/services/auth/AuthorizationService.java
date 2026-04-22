@@ -5,9 +5,6 @@ import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import io.jsonwebtoken.Claims;
-
-import java.util.Map;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,19 +47,11 @@ public class AuthorizationService {
 
     public String generateIdentityToken(String userId) {
         UserEntity user = userService.getUserByUuid(userId);
-        return jwtUtils.generateIdentityToken(buildDetailedClaims(user), userId);
+        return jwtUtils.generateToken(JwtTokenBody.forIdentityToken(user));
     }
 
     public String generateRefreshToken(String userId) {
-        return jwtUtils.generateRefreshToken(buildClaims(userId), userId);
-    }
-
-    private Map<String, Object> buildClaims(String userId) {
         UserEntity user = userService.getUserByUuid(userId);
-        return Map.of("username", user.getUsername());
-    }
-
-    private Map<String, Object> buildDetailedClaims(UserEntity user) {
-        return Map.of("userId", user.getUuid(), "username", user.getUsername(), "email", user.getEmail(), "isVerified", user.isVerified());
+        return jwtUtils.generateToken(JwtTokenBody.forRefreshToken(user));
     }
 }

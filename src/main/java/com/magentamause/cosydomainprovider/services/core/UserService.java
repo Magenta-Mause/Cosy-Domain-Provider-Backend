@@ -92,9 +92,19 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public void resendVerificationCode(String uuid) {
+        UserEntity user = getUserByUuid(uuid);
+        if (user.isVerified()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User is already verified");
+        }
+        user.setAccessToken(generateAccessToken());
+        saveUser(user);
+        messagingService.sendUserAccessToken(user);
+    }
+
     public void verifyUser(String uuid, String accessToken) {
         UserEntity user = getUserByUuid(uuid);
-        if (!user.getAccessToken().equalsIgnoreCase(accessToken)) {
+        if (!user.getAccessToken().equalsIgnoreCase(accessToken.replace("-", ""))) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
         }
         user.setVerified(true);

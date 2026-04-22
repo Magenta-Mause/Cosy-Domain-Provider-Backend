@@ -1,5 +1,6 @@
 package com.magentamause.cosydomainprovider.controller.v1.schema;
 
+import com.magentamause.cosydomainprovider.model.action.EmailVerificationDto;
 import com.magentamause.cosydomainprovider.model.action.LoginDto;
 import com.magentamause.cosydomainprovider.model.action.TokenMode;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
@@ -28,5 +29,8 @@ public interface AuthorizationApi {
     ResponseEntity<Void> logout();
 
     @PostMapping("/verify")
-    ResponseEntity<Void> verifyEmail(@RequestBody String accessToken);
+    ResponseEntity<Void> verifyEmail(@RequestBody EmailVerificationDto accessToken);
+
+    @PostMapping("/resend-verification")
+    ResponseEntity<Void> resendVerification();
 }

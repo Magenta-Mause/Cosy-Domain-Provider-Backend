@@ -9,7 +9,6 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import java.security.Key;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,16 +31,8 @@ public class JwtUtils {
                 : jwtProperties.getRefreshTokenExpirationTime();
     }
 
-    public String generateIdentityToken(Map<String, Object> claims, String subject) {
-        Map<String, Object> map = new HashMap<>(claims);
-        map.put("tokenType", JwtTokenBody.TokenType.IDENTITY_TOKEN);
-        return createToken(map, subject, jwtProperties.getIdentityTokenExpirationTime());
-    }
-
-    public String generateRefreshToken(Map<String, Object> claims, String subject) {
-        Map<String, Object> map = new HashMap<>(claims);
-        map.put("tokenType", JwtTokenBody.TokenType.REFRESH_TOKEN);
-        return createToken(map, subject, jwtProperties.getRefreshTokenExpirationTime());
+    public String generateToken(JwtTokenBody body) {
+        return createToken(body.toClaimsMap(), body.getUserId(), getTokenValidityDuration(body.getTokenType()));
     }
 
     private String createToken(Map<String, Object> claims, String subject, long expirationTime) {

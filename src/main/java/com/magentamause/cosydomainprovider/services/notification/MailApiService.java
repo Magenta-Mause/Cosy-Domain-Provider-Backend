@@ -16,7 +16,7 @@ public class MailApiService implements MessagingService {
         mailApiClient.sendEmail(SendMailDto.builder()
                         .recipient(user.getEmail())
                         .subject("[ COSY DOMAIN PROVIDER ] Your Access Token")
-                        .body(buildAccessTokenEmail(user.getUsername(), user.getAccessToken()))
+                        .body(buildAccessTokenEmail(user.getUsername(), formatTokenForDisplay(user.getAccessToken())))
                         .enableHtml(true)
                         .build())
                 .subscribe(response -> {
@@ -28,6 +28,19 @@ public class MailApiService implements MessagingService {
                 }, error -> {
                     System.err.println("Error sending email to " + user.getEmail() + ": " + error.getMessage());
                 });
+    }
+
+    private static final String DASH_SPAN = "<span style=\"user-select:none;-webkit-user-select:none;\">-</span>";
+
+    private String formatTokenForDisplay(String token) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < token.length(); i += 2) {
+            if (!sb.isEmpty()) {
+                sb.append(DASH_SPAN);
+            }
+            sb.append(token, i, Math.min(i + 2, token.length()));
+        }
+        return sb.toString();
     }
 
     private String buildAccessTokenEmail(String username, String accessToken) {
@@ -124,6 +137,7 @@ public class MailApiService implements MessagingService {
                       letter-spacing: 1px;
                     }
 
+
                     .warning-box {
                       background-color: #fff3cd;
                       border: 2px solid #c9973a;
@@ -192,6 +206,7 @@ public class MailApiService implements MessagingService {
                       <p class="token-label">// YOUR TOKEN</p>
                       <div class="token-box">
                         <code>%s</code>
+                        <p style="font-size:14px; color:#7ecac3; margin:10px 0 0; font-family:'VT323',monospace; user-select:none; -webkit-user-select:none;">// dashes are visual only — copy gives clean token</p>
                       </div>
 
                       <div class="warning-box">

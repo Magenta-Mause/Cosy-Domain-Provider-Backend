@@ -2,6 +2,7 @@ package com.magentamause.cosydomainprovider.controller.v1.impl;
 
 import com.magentamause.cosydomainprovider.controller.v1.schema.AuthorizationApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.action.EmailVerificationDto;
 import com.magentamause.cosydomainprovider.model.action.LoginDto;
 import com.magentamause.cosydomainprovider.model.action.TokenMode;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
@@ -12,11 +13,7 @@ import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -70,12 +67,22 @@ public class AuthorizationController implements AuthorizationApi {
     }
 
     @Override
-    public ResponseEntity<Void> verifyEmail(String accessToken) {
+    public ResponseEntity<Void> resendVerification() {
         UserEntity user = securityContextService.getUser();
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
-        userService.verifyUser(user.getUuid(), accessToken);
+        userService.resendVerificationCode(user.getUuid());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> verifyEmail(EmailVerificationDto accessToken) {
+        UserEntity user = securityContextService.getUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        userService.verifyUser(user.getUuid(), accessToken.getToken());
         return ResponseEntity.noContent().build();
     }
 
@@ -101,6 +108,6 @@ public class AuthorizationController implements AuthorizationApi {
                         .build();
         return ResponseEntity.status(successStatus)
                 .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
-                .<LoginResponseDto>build();
+                .build();
     }
 }

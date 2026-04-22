@@ -9,8 +9,10 @@ import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
+
 import java.util.List;
 import java.util.Locale;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -52,8 +54,15 @@ public class SubdomainService {
         return entity;
     }
 
+    private boolean checkCanUserCreateSubdomain(UserEntity user) {
+        return user.isVerified();
+    }
+
     public SubdomainEntity createSubdomain(SubdomainCreationDto dto, UserEntity owner) {
         String label = dto.getLabel().toLowerCase(Locale.ROOT);
+        if (!checkCanUserCreateSubdomain(owner)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
+        }
 
         if (subdomainProperties.getReservedLabels().stream().anyMatch(label::equalsIgnoreCase)) {
             throw new ResponseStatusException(

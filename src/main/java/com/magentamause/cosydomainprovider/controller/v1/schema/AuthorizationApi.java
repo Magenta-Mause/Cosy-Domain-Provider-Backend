@@ -27,6 +27,6 @@ public interface AuthorizationApi {
     @PostMapping("/logout")
     ResponseEntity<Void> logout();
 
-    @PostMapping("/verify/{uuid}")
-    ResponseEntity<Void> verifyEmail(@PathVariable String uuid, @RequestParam String accessToken);
+    @PostMapping("/verify")
+    ResponseEntity<Void> verifyEmail(@RequestBody String accessToken);
 }

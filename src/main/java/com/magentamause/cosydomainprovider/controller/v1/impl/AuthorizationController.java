@@ -70,12 +70,12 @@ public class AuthorizationController implements AuthorizationApi {
     }
 
     @Override
-    public ResponseEntity<Void> verifyEmail(String uuid, String accessToken) {
+    public ResponseEntity<Void> verifyEmail(String accessToken) {
         UserEntity user = securityContextService.getUser();
-        if (user == null || !user.getUuid().equals(uuid)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user");
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
-        userService.verifyUser(uuid, accessToken);
+        userService.verifyUser(user.getUuid(), accessToken);
         return ResponseEntity.noContent().build();
     }
 

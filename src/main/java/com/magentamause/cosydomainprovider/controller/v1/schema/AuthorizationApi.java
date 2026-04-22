@@ -6,12 +6,7 @@ import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/v1/auth")
 public interface AuthorizationApi {
@@ -31,4 +26,7 @@ public interface AuthorizationApi {
 
     @PostMapping("/logout")
     ResponseEntity<Void> logout();
+
+    @PostMapping("/verify/{uuid}")
+    ResponseEntity<Void> verifyEmail(@PathVariable String uuid, @RequestParam String accessToken);
 }

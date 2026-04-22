@@ -28,6 +28,11 @@ jwt:
   identity-token-expiration-time: 3600000 #1 hour
   refresh-token-expiration-time: 2678400000 #1 month
 
+client:
+  mail:
+    url: ${MAIL_API_URL}
+    api-key: ${MAIL_API_KEY}
+
 subdomain:
   max-per-user: 5
   reserved-labels:

@@ -1,6 +1,6 @@
 package com.magentamause.cosydomainprovider.security.jwtfilter;
 
-import com.magentamause.cosydomainprovider.configuration.properties.security.JwtProperties;
+import com.magentamause.cosydomainprovider.configuration.security.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtParser;

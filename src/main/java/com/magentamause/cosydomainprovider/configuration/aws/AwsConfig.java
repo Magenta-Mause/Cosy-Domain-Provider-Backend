@@ -1,4 +1,4 @@
-package com.magentamause.cosydomainprovider.configuration.properties.aws;
+package com.magentamause.cosydomainprovider.configuration.aws;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package com.magentamause.cosydomainprovider.configuration.properties.aws;
+package com.magentamause.cosydomainprovider.configuration.aws;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

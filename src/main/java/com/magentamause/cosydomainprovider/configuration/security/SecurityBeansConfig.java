@@ -1,4 +1,4 @@
-package com.magentamause.cosydomainprovider.configuration.properties.security;
+package com.magentamause.cosydomainprovider.configuration.security;
 
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;

@@ -1,7 +1,7 @@
 package com.magentamause.cosydomainprovider.services.core;
 
-import com.magentamause.cosydomainprovider.configuration.properties.aws.Route53Properties;
-import com.magentamause.cosydomainprovider.configuration.properties.subdomain.SubdomainProperties;
+import com.magentamause.cosydomainprovider.configuration.aws.Route53Properties;
+import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.entity.SubdomainEntity;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.SubdomainCreationDto;

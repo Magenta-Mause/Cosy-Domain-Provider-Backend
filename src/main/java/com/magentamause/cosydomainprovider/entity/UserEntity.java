@@ -26,7 +26,10 @@ public class UserEntity {
     private String email;
     private String passwordHash;
 
+    private String accessToken;
+    private boolean isVerified;
+
     public UserDto toDto() {
-        return UserDto.builder().uuid(uuid).username(username).email(email).build();
+        return UserDto.builder().uuid(uuid).username(username).email(email).isVerified(isVerified).build();
     }
 }

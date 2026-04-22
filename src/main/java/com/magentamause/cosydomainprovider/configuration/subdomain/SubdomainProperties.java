@@ -1,4 +1,4 @@
-package com.magentamause.cosydomainprovider.configuration.properties.subdomain;
+package com.magentamause.cosydomainprovider.configuration.subdomain;
 
 import java.util.List;
 import lombok.Data;

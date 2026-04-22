@@ -9,6 +9,7 @@ import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
+import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class AuthorizationController implements AuthorizationApi {
     private final AuthorizationService authorizationService;
     private final UserService userService;
     private final JwtUtils jwtUtils;
+    private final SecurityContextService securityContextService;
 
     @Override
     public ResponseEntity<LoginResponseDto> login(LoginDto loginDto, TokenMode tokenMode) {
@@ -66,6 +69,16 @@ public class AuthorizationController implements AuthorizationApi {
                 .build();
     }
 
+    @Override
+    public ResponseEntity<Void> verifyEmail(String uuid, String accessToken) {
+        UserEntity user = securityContextService.getUser();
+        if (user == null || !user.getUuid().equals(uuid)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user");
+        }
+        userService.verifyUser(uuid, accessToken);
+        return ResponseEntity.noContent().build();
+    }
+
     private ResponseEntity<LoginResponseDto> buildRefreshTokenResponse(
             String refreshToken, TokenMode tokenMode, HttpStatus successStatus) {
         if (tokenMode == TokenMode.DIRECT) {
@@ -81,7 +94,7 @@ public class AuthorizationController implements AuthorizationApi {
                         .secure(false)
                         .maxAge(
                                 jwtUtils.getTokenValidityDuration(
-                                                JwtTokenBody.TokenType.REFRESH_TOKEN)
+                                        JwtTokenBody.TokenType.REFRESH_TOKEN)
                                         / MILLISECONDS_IN_SECOND)
                         .path(REFRESH_COOKIE_PATH)
                         .sameSite("Strict")

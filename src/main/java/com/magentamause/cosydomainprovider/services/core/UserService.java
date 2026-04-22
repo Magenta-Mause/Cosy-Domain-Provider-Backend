@@ -3,8 +3,14 @@ package com.magentamause.cosydomainprovider.services.core;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
+
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import com.magentamause.cosydomainprovider.services.notification.MessagingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,8 +21,13 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final int ACCESS_TOKEN_LENGTH = 6;
+    private static final String ACCESS_TOKEN_LETTERS = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MessagingService messagingService;
 
     public List<UserEntity> getAllUsers() {
         return userRepository.findAll();
@@ -33,16 +44,6 @@ public class UserService {
                                 new ResponseStatusException(
                                         HttpStatus.NOT_FOUND,
                                         "User with id " + uuid + " not found"));
-    }
-
-    public UserEntity getUserByUsername(String username) {
-        return userRepository
-                .findByUsernameIgnoreCase(username)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "User with username " + username + " not found"));
     }
 
     public UserEntity getUserByEmail(String email) {
@@ -75,12 +76,34 @@ public class UserService {
     }
 
     public UserEntity createUser(UserCreationDto dto) {
+        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+        }
+
         UserEntity user =
                 UserEntity.builder()
                         .username(dto.getUsername())
                         .email(dto.getEmail())
                         .passwordHash(passwordEncoder.encode(dto.getPassword()))
+                        .accessToken(generateAccessToken())
                         .build();
+
+        messagingService.sendUserAccessToken(user);
         return userRepository.save(user);
+    }
+
+    public void verifyUser(String uuid, String accessToken) {
+        UserEntity user = getUserByUuid(uuid);
+        if (!user.getAccessToken().equalsIgnoreCase(accessToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
+        }
+        user.setVerified(true);
+        saveUser(user);
+    }
+
+    private static String generateAccessToken() {
+        return IntStream.range(0, ACCESS_TOKEN_LENGTH)
+                .mapToObj(i -> String.valueOf(ACCESS_TOKEN_LETTERS.charAt(SECURE_RANDOM.nextInt(ACCESS_TOKEN_LETTERS.length()))))
+                .collect(Collectors.joining());
     }
 }

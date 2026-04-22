@@ -1,6 +1,6 @@
 package com.magentamause.cosydomainprovider.services.aws;
 
-import com.magentamause.cosydomainprovider.configuration.properties.aws.Route53Properties;
+import com.magentamause.cosydomainprovider.configuration.aws.Route53Properties;
 import com.magentamause.cosydomainprovider.model.dns.DnsEntry;
 import java.util.ArrayList;
 import java.util.List;

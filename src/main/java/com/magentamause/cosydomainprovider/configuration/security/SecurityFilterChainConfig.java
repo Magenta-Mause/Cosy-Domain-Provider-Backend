@@ -1,4 +1,4 @@
-package com.magentamause.cosydomainprovider.configuration.properties.security;
+package com.magentamause.cosydomainprovider.configuration.security;
 
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtFilter;
 import jakarta.servlet.DispatcherType;

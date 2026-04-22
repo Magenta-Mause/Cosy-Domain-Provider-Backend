@@ -5,8 +5,11 @@ import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
 
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -108,6 +111,31 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
         }
         user.setVerified(true);
+        saveUser(user);
+    }
+
+    public void initiatePasswordReset(String email) {
+        Optional<UserEntity> userOpt = userRepository.findByEmailIgnoreCase(email);
+        if (userOpt.isEmpty()) {
+            return;
+        }
+        UserEntity user = userOpt.get();
+        String resetToken = UUID.randomUUID().toString();
+        user.setPasswordResetToken(resetToken);
+        user.setPasswordResetExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES));
+        saveUser(user);
+        messagingService.sendPasswordResetEmail(user, resetToken);
+    }
+
+    public void confirmPasswordReset(String token, String newPassword) {
+        UserEntity user = userRepository.findByPasswordResetToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token"));
+        if (user.getPasswordResetExpiresAt() == null || Instant.now().isAfter(user.getPasswordResetExpiresAt())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetExpiresAt(null);
         saveUser(user);
     }
 

@@ -8,6 +8,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.*;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @Builder
@@ -28,6 +30,9 @@ public class UserEntity {
 
     private String accessToken;
     private boolean isVerified;
+
+    private String passwordResetToken;
+    private Instant passwordResetExpiresAt;
 
     public UserDto toDto() {
         return UserDto.builder().uuid(uuid).username(username).email(email).isVerified(isVerified).build();

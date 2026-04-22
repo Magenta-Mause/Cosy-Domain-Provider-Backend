@@ -6,7 +6,7 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
-import com.magentamause.cosydomainprovider.services.auth.OAuthService;
+import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;

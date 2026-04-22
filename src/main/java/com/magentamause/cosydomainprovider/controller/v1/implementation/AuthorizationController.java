@@ -1,13 +1,8 @@
-package com.magentamause.cosydomainprovider.controller.v1.impl;
+package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
 import com.magentamause.cosydomainprovider.controller.v1.schema.AuthorizationApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
-import com.magentamause.cosydomainprovider.model.action.EmailVerificationDto;
-import com.magentamause.cosydomainprovider.model.action.ForgotPasswordDto;
-import com.magentamause.cosydomainprovider.model.action.LoginDto;
-import com.magentamause.cosydomainprovider.model.action.ResetPasswordDto;
-import com.magentamause.cosydomainprovider.model.action.TokenMode;
-import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
+import com.magentamause.cosydomainprovider.model.action.*;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;

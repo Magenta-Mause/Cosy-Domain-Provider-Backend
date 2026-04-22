@@ -36,8 +36,14 @@ client:
 frontend:
   url: ${FRONTEND_URL:http://localhost:5173}
 
+stripe:
+  api-key: ${STRIPE_API_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  product-id: ${STRIPE_PRODUCT_ID:prod_UNtnnRNU022YbO}
+
 subdomain:
-  max-per-user: 5
+  max-per-free-user: 1
+  max-per-plus-user: 5
   reserved-labels:
     - www
     - api

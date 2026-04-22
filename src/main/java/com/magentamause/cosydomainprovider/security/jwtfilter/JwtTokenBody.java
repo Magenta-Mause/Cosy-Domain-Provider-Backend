@@ -1,6 +1,7 @@
 package com.magentamause.cosydomainprovider.security.jwtfilter;
 
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.core.Plan;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
@@ -13,6 +14,7 @@ public class JwtTokenBody {
     private String userId;
     private String email;
     private boolean isVerified;
+    private Plan plan;
     private TokenType tokenType;
 
     public enum TokenType {
@@ -35,6 +37,7 @@ public class JwtTokenBody {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .isVerified(user.isVerified())
+                .plan(user.getPlan())
                 .build();
     }
 
@@ -46,6 +49,7 @@ public class JwtTokenBody {
         if (email != null) map.put("email", email);
         if (tokenType == TokenType.IDENTITY_TOKEN) {
             map.put("isVerified", isVerified);
+            if (plan != null) map.put("plan", plan.name());
         }
         return map;
     }

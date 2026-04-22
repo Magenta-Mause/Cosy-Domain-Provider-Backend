@@ -1,10 +1,13 @@
 # Cosy Domain Provider — Backend
 
-Spring Boot service that manages user accounts, subdomain records on `cosy-hosting.net`, and AWS Route53 DNS entries. Users register/login, then claim a subdomain that gets an A record in Route53 and (eventually) an auto-renewed TLS certificate.
+Spring Boot service that manages user accounts, subdomain records on `cosy-hosting.net`, and AWS Route53 DNS entries.
+Users register/login, then claim a subdomain that gets an A record in Route53 and (eventually) an auto-renewed TLS
+certificate.
 
 Frontend counterpart: `../cosy-domain-provider-frontend`
 
 See `specs/` for detailed feature specs:
+
 - `specs/auth.md` — auth flow, tokens, planned OAuth + email verification
 - `specs/subdomains.md` — subdomain CRUD, Route53, lifecycle, planned features
 - `specs/users.md` — user management, Cosy+ billing tier
@@ -24,13 +27,13 @@ docker compose -f infrastructure/compose.yaml up -d # Start local PostgreSQL
 
 ## Required environment variables
 
-| Variable | Purpose |
-|---|---|
-| `COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY` | HMAC-SHA256 signing key for JWT tokens |
-| `AWS_HOSTED_ZONE_ID` | Route53 hosted zone ID |
-| `AWS_DOMAIN` | Parent domain (e.g. `cosy-hosting.net`) |
-| `AWS_ACCESS_KEY_ID` | AWS credentials |
-| `AWS_SECRET_ACCESS_KEY` | AWS credentials |
+| Variable                              | Purpose                                 |
+|---------------------------------------|-----------------------------------------|
+| `COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY` | HMAC-SHA256 signing key for JWT tokens  |
+| `AWS_HOSTED_ZONE_ID`                  | Route53 hosted zone ID                  |
+| `AWS_DOMAIN`                          | Parent domain (e.g. `cosy-hosting.net`) |
+| `AWS_ACCESS_KEY_ID`                   | AWS credentials                         |
+| `AWS_SECRET_ACCESS_KEY`               | AWS credentials                         |
 
 A default insecure JWT key is set in `application.yaml` for local dev — override in production.
 
@@ -122,8 +125,15 @@ PENDING  →  ACTIVE   (Route53 upsert succeeded)
 ### Exception handling
 
 `ExceptionController` (`@RestControllerAdvice`) returns `ApiException` with:
+
 ```json
-{ "statusCode": 404, "errorCode": "NOT_FOUND", "message": "...", "path": "/api/...", "timestamp": "..." }
+{
+  "statusCode": 404,
+  "errorCode": "NOT_FOUND",
+  "message": "...",
+  "path": "/api/...",
+  "timestamp": "..."
+}
 ```
 
 ### Code style
@@ -162,10 +172,13 @@ GET    /actuator/**
 ## Database schema
 
 **UserEntity** (`user_entity`)
+
 - `uuid` PK, `username` (unique), `email`, `passwordHash`
 
 **SubdomainEntity** (`subdomain_entity`)
-- `uuid` PK, `label` (unique), `owner` FK → UserEntity, `targetIp`, `status` (PENDING/ACTIVE/FAILED), `createdAt`, `updatedAt`
+
+- `uuid` PK, `label` (unique), `owner` FK → UserEntity, `targetIp`, `status` (PENDING/ACTIVE/FAILED), `createdAt`,
+  `updatedAt`
 
 ---
 
@@ -175,15 +188,15 @@ Key properties in `application.yaml`:
 
 ```yaml
 aws.route53.hosted-zone-id: ${AWS_HOSTED_ZONE_ID}
-aws.route53.domain:          ${AWS_DOMAIN}
-aws.route53.default-ttl:     300
+aws.route53.domain: ${AWS_DOMAIN}
+aws.route53.default-ttl: 300
 
-jwt.secret-key:                        ${COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY}
-jwt.identity-token-expiration-time:    3600000    # 1 hour (ms)
-jwt.refresh-token-expiration-time:     2678400000  # 1 month (ms)
+jwt.secret-key: ${COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY}
+jwt.identity-token-expiration-time: 3600000    # 1 hour (ms)
+jwt.refresh-token-expiration-time: 2678400000  # 1 month (ms)
 
 subdomain.max-per-user: 5
-subdomain.reserved-labels: [www, api, admin, mail, ...]
+subdomain.reserved-labels: [ www, api, admin, mail, ... ]
 ```
 
 ---
@@ -191,14 +204,15 @@ subdomain.reserved-labels: [www, api, admin, mail, ...]
 ## Planned features (not yet built)
 
 - **OAuth sign-in** — Google, GitHub, Discord, Microsoft, Apple via Spring OAuth2 Resource Server
-- **Cosy+ billing tier** (€3/month)
-  - Enables custom subdomain name choice (instead of auto-generated)
-  - Up to 5 domains per account
-  - Bring-your-own-domain via CNAME
-  - Priority TLS renewal queue
-  - Revenue supports the Cosy core team
-  - Requires `plan` field on `UserEntity` and Stripe (or similar) integration
+- **Cosy+ billing tier** (€1/month)
+    - Enables custom subdomain name choice (instead of auto-generated)
+    - Up to 5 domains per account
+    - Bring-your-own-domain via CNAME
+    - Priority TLS renewal queue
+    - Revenue supports the Cosy core team
+    - Requires `plan` field on `UserEntity` and Stripe (or similar) integration
 - **Email verification** on registration (6-digit code sent to email)
 - **Password reset** via email (time-limited token)
-- **Dynamic DNS update endpoint** — `GET /update?label=&token=&ip=` using per-subdomain token (DuckDNS-style, TODO comment in `SubdomainService`)
+- **Dynamic DNS update endpoint** — `GET /update?label=&token=&ip=` using per-subdomain token (DuckDNS-style, TODO
+  comment in `SubdomainService`)
 - **TLS certificate automation** — Let's Encrypt integration (ACME client); `SubdomainEntity` needs cert expiry tracking

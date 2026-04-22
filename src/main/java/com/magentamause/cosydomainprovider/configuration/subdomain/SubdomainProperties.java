@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "subdomain")
 public class SubdomainProperties {
-    private int maxPerUser = 5;
+    private int maxPerFreeUser = 1;
+    private int maxPerPlusUser = 5;
     private List<String> reservedLabels = List.of();
 }

@@ -14,4 +14,6 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
     boolean existsByEmailIgnoreCase(String email);
 
     Optional<UserEntity> findByPasswordResetToken(String passwordResetToken);
+
+    Optional<UserEntity> findByStripeCustomerId(String stripeCustomerId);
 }

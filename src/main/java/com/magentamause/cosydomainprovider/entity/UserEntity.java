@@ -1,8 +1,11 @@
 package com.magentamause.cosydomainprovider.entity;
 
+import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,7 +37,15 @@ public class UserEntity {
     private String passwordResetToken;
     private Instant passwordResetExpiresAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Plan plan = Plan.FREE;
+
+    private Instant planExpiresAt;
+    private String stripeCustomerId;
+
     public UserDto toDto() {
-        return UserDto.builder().uuid(uuid).username(username).email(email).isVerified(isVerified).build();
+        return UserDto.builder().uuid(uuid).username(username).email(email).isVerified(isVerified).plan(plan).build();
     }
 }

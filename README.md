@@ -119,35 +119,3 @@ The server starts on **http://localhost:8080**.
 ## API documentation
 
 Swagger UI is available at **http://localhost:8080/swagger-ui/index.html** once the app is running.
-
----
-
-## Project structure
-
-```
-src/main/java/com/magentamause/cosydomainprovider/
-├── configuration/        # Spring beans, security config, AWS / JWT / subdomain properties
-├── controller/           # REST controllers (v1: auth, subdomains, users)
-├── entity/               # JPA entities (UserEntity, SubdomainEntity)
-├── model/                # DTOs and domain models
-├── repository/           # Spring Data JPA repositories
-├── security/             # JWT filter and utilities
-└── services/             # Business logic, Route 53 integration
-infrastructure/
-└── compose.yaml          # Local PostgreSQL container
-```
-
----
-
-## Configuration reference (`application.yaml`)
-
-| Key | Default | Description |
-|---|---|---|
-| `spring.datasource.url` | `jdbc:postgresql://localhost:5432/cosy` | PostgreSQL connection |
-| `aws.region` | `eu-central-1` | AWS region |
-| `aws.route53.hosted-zone-id` | `$AWS_HOSTED_ZONE_ID` | Route 53 hosted zone |
-| `aws.route53.domain` | `$AWS_DOMAIN` | Root domain |
-| `aws.route53.default-ttl` | `300` | DNS record TTL in seconds |
-| `jwt.identity-token-expiration-time` | `3600000` (1 h) | Access token lifetime in ms |
-| `jwt.refresh-token-expiration-time` | `2678400000` (31 d) | Refresh token lifetime in ms |
-| `subdomain.max-per-user` | `5` | Max subdomains per user |

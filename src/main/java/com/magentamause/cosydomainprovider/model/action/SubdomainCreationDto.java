@@ -2,7 +2,6 @@ package com.magentamause.cosydomainprovider.model.action;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,12 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SubdomainCreationDto {
-    @NotBlank
-    @Size(min = 1, max = 63)
-    @Pattern(
-            regexp = "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$",
-            message =
-                    "Label must be 1-63 lowercase letters/digits/hyphens, not starting or ending with a hyphen")
     private String label;
 
     @NotBlank

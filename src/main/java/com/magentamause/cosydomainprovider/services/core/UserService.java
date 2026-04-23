@@ -9,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -18,10 +17,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public List<UserEntity> getAllUsers() {
-        return userRepository.findAll();
-    }
+    private final SubdomainService subdomainService;
 
     public Optional<UserEntity> getOptionalUserByUuid(String uuid) {
         return userRepository.findById(uuid);
@@ -38,19 +34,9 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with email " + email + " not found"));
     }
 
-    public void deleteUser(UserEntity user) {
-        userRepository.delete(user);
-    }
-
-    public void patchUser(String uuid, UserEntity user) {
-        UserEntity existingUser = getUserByUuid(uuid);
-        if (user.getUsername() != null) {
-            existingUser.setUsername(user.getUsername());
-        }
-        if (user.getEmail() != null) {
-            existingUser.setEmail(user.getEmail());
-        }
-        userRepository.save(existingUser);
+    public void deleteUserByUuid(String uuid) {
+        subdomainService.deleteSubdomainsByOwner(uuid);
+        userRepository.deleteById(uuid);
     }
 
     public UserEntity createUser(UserCreationDto dto) {

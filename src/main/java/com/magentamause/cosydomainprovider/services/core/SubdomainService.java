@@ -11,16 +11,15 @@ import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
-
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 /**
  * TODO: add a DuckDNS-style dynamic update endpoint (GET /update?label=...&token=...&ip=...) using
@@ -50,7 +49,6 @@ public class SubdomainService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Subdomain " + uuid + " not found"));
         if (!entity.getOwner().getUuid().equals(owner.getUuid())) {
-            // Don't leak existence to non-owners.
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Subdomain " + uuid + " not found");
         }
@@ -148,16 +146,22 @@ public class SubdomainService {
         return subdomainRepository.save(entity);
     }
 
-    public void deleteSubdomain(String uuid, UserEntity owner) {
-        SubdomainEntity entity = getOwnedSubdomain(uuid, owner);
+    public void deleteSubdomain(String uuid) {
+        SubdomainEntity entity =
+                subdomainRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Subdomain " + uuid + " not found"));
         try {
             route53Service.deleteARecord(entity.getLabel(), entity.getTargetIp());
             subdomainRepository.delete(entity);
             log.info(
                     "Deleted subdomain {}.{} for user {}",
                     entity.getLabel(),
-                    route53Properties.getDomain(),
-                    owner.getUuid());
+                    route53Properties.getDomain());
         } catch (Exception e) {
             entity.setStatus(SubdomainStatus.FAILED);
             subdomainRepository.save(entity);
@@ -173,8 +177,16 @@ public class SubdomainService {
         }
     }
 
+    public void deleteSubdomain(String uuid, UserEntity owner) {
+        getOwnedSubdomain(uuid, owner);
+        deleteSubdomain(uuid);
+    }
+
     public LabelAvailabilityDto checkLabelAvailability(String label) {
         String normalized = label.toLowerCase(Locale.ROOT);
+        if (normalized.length() < 3) {
+            return LabelAvailabilityDto.unavailable("too short");
+        }
         if (subdomainProperties.getReservedLabels().stream().anyMatch(normalized::equalsIgnoreCase)) {
             return LabelAvailabilityDto.unavailable("reserved");
         }
@@ -186,5 +198,10 @@ public class SubdomainService {
 
     public String getParentDomain() {
         return route53Properties.getDomain();
+    }
+
+    public void deleteSubdomainsByOwner(String uuid) {
+        List<SubdomainEntity> subdomains = subdomainRepository.findAllByOwner_Uuid(uuid);
+        subdomains.stream().forEach(subdomain -> deleteSubdomain(subdomain.getUuid()));
     }
 }

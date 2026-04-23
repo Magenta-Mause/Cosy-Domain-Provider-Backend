@@ -9,4 +9,5 @@ public class StripeProperties {
     private String apiKey;
     private String webhookSecret;
     private String productId;
+    private String priceId;
 }

@@ -6,6 +6,7 @@ import com.magentamause.cosydomainprovider.entity.SubdomainEntity;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.SubdomainCreationDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
+import com.magentamause.cosydomainprovider.model.core.LabelAvailabilityDto;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
@@ -170,6 +171,17 @@ public class SubdomainService {
                     HttpStatus.BAD_GATEWAY,
                     "Failed to remove DNS record; subdomain marked FAILED and retained for retry");
         }
+    }
+
+    public LabelAvailabilityDto checkLabelAvailability(String label) {
+        String normalized = label.toLowerCase(Locale.ROOT);
+        if (subdomainProperties.getReservedLabels().stream().anyMatch(normalized::equalsIgnoreCase)) {
+            return LabelAvailabilityDto.unavailable("reserved");
+        }
+        if (subdomainRepository.findByLabelIgnoreCase(normalized).isPresent()) {
+            return LabelAvailabilityDto.unavailable("taken");
+        }
+        return LabelAvailabilityDto.available();
     }
 
     public String getParentDomain() {

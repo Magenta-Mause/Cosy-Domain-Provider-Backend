@@ -4,12 +4,14 @@ import com.magentamause.cosydomainprovider.configuration.stripe.StripeProperties
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
+import com.stripe.exception.EventDataObjectDeserializationException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
+import com.stripe.model.StripeObject;
 import com.stripe.model.Subscription;
 import com.stripe.net.Webhook;
 import com.stripe.param.CustomerCreateParams;
@@ -48,6 +50,29 @@ public class StripeService {
         }
     }
 
+    public String createCheckoutSession(UserEntity user) {
+        try {
+            String customerId = getOrCreateCustomerId(user);
+            com.stripe.param.checkout.SessionCreateParams params =
+                    com.stripe.param.checkout.SessionCreateParams.builder()
+                            .setMode(com.stripe.param.checkout.SessionCreateParams.Mode.SUBSCRIPTION)
+                            .setCustomer(customerId)
+                            .addLineItem(
+                                    com.stripe.param.checkout.SessionCreateParams.LineItem.builder()
+                                            .setPrice(stripeProperties.getPriceId())
+                                            .setQuantity(1L)
+                                            .build())
+                            .setSuccessUrl(frontendUrl + "/billing?success=true")
+                            .setCancelUrl(frontendUrl + "/billing")
+                            .putMetadata("userId", user.getUuid())
+                            .build();
+            return com.stripe.model.checkout.Session.create(params).getUrl();
+        } catch (StripeException e) {
+            log.error("Failed to create checkout session for user {}: {}", user.getUuid(), e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to create checkout session");
+        }
+    }
+
     public void handleWebhookEvent(String payload, String sigHeader) throws SignatureVerificationException {
         Event event = Webhook.constructEvent(payload, sigHeader, stripeProperties.getWebhookSecret());
 
@@ -74,12 +99,8 @@ public class StripeService {
     }
 
     private void handleInvoicePaymentSucceeded(Event event) {
-        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
-        if (deserializer.getObject().isEmpty()) {
-            log.warn("Could not deserialise invoice.payment_succeeded payload");
-            return;
-        }
-        Invoice invoice = (Invoice) deserializer.getObject().get();
+        Invoice invoice = deserialize(event, Invoice.class);
+        if (invoice == null) return;
         String customerId = invoice.getCustomer();
 
         UserEntity user = findByStripeCustomerId(customerId);
@@ -94,12 +115,8 @@ public class StripeService {
     }
 
     private void handleSubscriptionDeleted(Event event) {
-        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
-        if (deserializer.getObject().isEmpty()) {
-            log.warn("Could not deserialise customer.subscription.deleted payload");
-            return;
-        }
-        Subscription subscription = (Subscription) deserializer.getObject().get();
+        Subscription subscription = deserialize(event, Subscription.class);
+        if (subscription == null) return;
         String customerId = subscription.getCustomer();
 
         UserEntity user = findByStripeCustomerId(customerId);
@@ -109,6 +126,20 @@ public class StripeService {
         user.setPlanExpiresAt(null);
         userRepository.save(user);
         log.info("User {} downgraded to FREE via subscription cancellation", user.getUuid());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends StripeObject> T deserialize(Event event, Class<T> type) {
+        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+        if (deserializer.getObject().isPresent()) {
+            return (T) deserializer.getObject().get();
+        }
+        try {
+            return (T) deserializer.deserializeUnsafe();
+        } catch (EventDataObjectDeserializationException e) {
+            log.warn("Could not deserialise {} payload: {}", event.getType(), e.getMessage());
+            return null;
+        }
     }
 
     private UserEntity findByStripeCustomerId(String customerId) {

@@ -15,7 +15,6 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-
 aws:
   region: eu-central-1
   route53:
@@ -39,7 +38,8 @@ frontend:
 stripe:
   api-key: ${STRIPE_API_KEY}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
-  product-id: ${STRIPE_PRODUCT_ID:prod_UNtnnRNU022YbO}
+  product-id: ${STRIPE_PRODUCT_ID}
+  price-id: ${STRIPE_PRICE_ID}
 
 subdomain:
   max-per-free-user: 1

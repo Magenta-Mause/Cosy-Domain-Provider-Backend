@@ -118,4 +118,4 @@ The server starts on **http://localhost:8080**.
 
 ## API documentation
 
-Swagger UI is available at **http://localhost:8080/swagger-ui/index.html** once the app is running.
+Swagger UI is available at **http://localhost:8080/api/swagger-ui/index.html** once the app is running.

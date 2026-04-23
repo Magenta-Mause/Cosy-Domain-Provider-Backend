@@ -8,7 +8,9 @@ import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
+import com.magentamause.cosydomainprovider.services.core.PasswordResetService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
+import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,28 +25,28 @@ public class AuthorizationController implements AuthorizationApi {
 
     private final AuthorizationService authorizationService;
     private final UserService userService;
+    private final UserVerificationService userVerificationService;
+    private final PasswordResetService passwordResetService;
     private final JwtUtils jwtUtils;
     private final SecurityContextService securityContextService;
 
     @Override
     public ResponseEntity<LoginResponseDto> login(LoginDto loginDto, TokenMode tokenMode) {
-        String refreshToken =
-                authorizationService.loginUser(loginDto.getEmail(), loginDto.getPassword());
+        String refreshToken = authorizationService.loginUser(loginDto.getEmail(), loginDto.getPassword());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<LoginResponseDto> register(
-            UserCreationDto userCreationDto, TokenMode tokenMode) {
+    public ResponseEntity<LoginResponseDto> register(UserCreationDto userCreationDto, TokenMode tokenMode) {
         UserEntity user = userService.createUser(userCreationDto);
+        userVerificationService.sendInitialVerification(user);
         String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<String> fetchToken(String refreshToken) {
-        return ResponseEntity.ok(
-                authorizationService.fetchIdentityTokenFromRefreshToken(refreshToken));
+        return ResponseEntity.ok(authorizationService.fetchIdentityTokenFromRefreshToken(refreshToken));
     }
 
     @Override
@@ -69,7 +71,7 @@ public class AuthorizationController implements AuthorizationApi {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
-        userService.resendVerificationCode(user.getUuid());
+        userVerificationService.resendVerificationCode(user.getUuid());
         return ResponseEntity.noContent().build();
     }
 
@@ -79,19 +81,19 @@ public class AuthorizationController implements AuthorizationApi {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
-        userService.verifyUser(user.getUuid(), accessToken.getToken());
+        userVerificationService.verifyUser(user.getUuid(), accessToken.getToken());
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<Void> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
-        userService.initiatePasswordReset(forgotPasswordDto.getEmail());
+        passwordResetService.initiatePasswordReset(forgotPasswordDto.getEmail());
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<Void> resetPassword(ResetPasswordDto resetPasswordDto) {
-        userService.confirmPasswordReset(resetPasswordDto.getToken(), resetPasswordDto.getNewPassword());
+        passwordResetService.confirmPasswordReset(resetPasswordDto.getToken(), resetPasswordDto.getNewPassword());
         return ResponseEntity.noContent().build();
     }
 
@@ -108,10 +110,7 @@ public class AuthorizationController implements AuthorizationApi {
                 ResponseCookie.from("refreshToken", refreshToken)
                         .httpOnly(true)
                         .secure(false)
-                        .maxAge(
-                                jwtUtils.getTokenValidityDuration(
-                                        JwtTokenBody.TokenType.REFRESH_TOKEN)
-                                        / MILLISECONDS_IN_SECOND)
+                        .maxAge(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN) / MILLISECONDS_IN_SECOND)
                         .path(REFRESH_COOKIE_PATH)
                         .sameSite("Strict")
                         .build();

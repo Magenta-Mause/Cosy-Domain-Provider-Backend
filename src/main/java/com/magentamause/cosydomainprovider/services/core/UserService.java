@@ -1,6 +1,7 @@
 package com.magentamause.cosydomainprovider.services.core;
 
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,20 @@ public class UserService {
     public void deleteUserByUuid(String uuid) {
         subdomainService.deleteSubdomainsByOwner(uuid);
         userRepository.deleteById(uuid);
+    }
+
+    public UserEntity updateUser(UpdateUserDto dto, UserEntity user) {
+        if (dto.getNewUsername() != null) {
+            user.setUsername(dto.getNewUsername());
+        }
+        if (dto.getNewPassword() != null) {
+            if (dto.getCurrentPassword() == null ||
+                    !passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
+            }
+            user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+        }
+        return userRepository.save(user);
     }
 
     public UserEntity createUser(UserCreationDto dto) {

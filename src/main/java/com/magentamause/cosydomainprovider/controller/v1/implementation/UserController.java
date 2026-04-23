@@ -2,6 +2,7 @@ package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
 import com.magentamause.cosydomainprovider.controller.v1.schema.UserApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
@@ -24,6 +25,12 @@ public class UserController implements UserApi {
         UserEntity user = userService.createUser(userCreationDto);
         userVerificationService.sendInitialVerification(user);
         return ResponseEntity.ok(user.toDto());
+    }
+
+    @Override
+    public ResponseEntity<UserDto> updateUser(UpdateUserDto dto) {
+        UserEntity user = securityContextService.getUser();
+        return ResponseEntity.ok(userService.updateUser(dto, user).toDto());
     }
 
     @Override

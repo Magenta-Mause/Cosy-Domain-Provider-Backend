@@ -39,7 +39,6 @@ public class AuthorizationController implements AuthorizationApi {
     @Override
     public ResponseEntity<LoginResponseDto> register(UserCreationDto userCreationDto, TokenMode tokenMode) {
         UserEntity user = userService.createUser(userCreationDto);
-        userVerificationService.sendInitialVerification(user);
         String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.CREATED);
     }

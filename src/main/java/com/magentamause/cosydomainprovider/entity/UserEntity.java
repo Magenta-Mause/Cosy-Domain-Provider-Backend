@@ -32,6 +32,7 @@ public class UserEntity {
     private String passwordHash;
 
     private String accessToken;
+    private Instant accessTokenExpiresAt;
     private boolean isVerified;
 
     private String passwordResetToken;

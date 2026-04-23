@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -25,6 +27,7 @@ public class UserVerificationService {
 
     public void sendInitialVerification(UserEntity user) {
         user.setAccessToken(generateAccessToken());
+        user.setAccessTokenExpiresAt(Instant.now().plus(3, ChronoUnit.HOURS));
         userRepository.save(user);
         messagingService.sendUserAccessToken(user);
     }
@@ -36,6 +39,7 @@ public class UserVerificationService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User is already verified");
         }
         user.setAccessToken(generateAccessToken());
+        user.setAccessTokenExpiresAt(Instant.now().plus(3, ChronoUnit.HOURS));
         userRepository.save(user);
         messagingService.sendUserAccessToken(user);
     }
@@ -43,6 +47,9 @@ public class UserVerificationService {
     public void verifyUser(String uuid, String accessToken) {
         UserEntity user = userRepository.findById(uuid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id " + uuid + " not found"));
+        if (user.getAccessTokenExpiresAt() == null || Instant.now().isAfter(user.getAccessTokenExpiresAt())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code has expired");
+        }
         if (!user.getAccessToken().equalsIgnoreCase(accessToken.replace("-", ""))) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
         }

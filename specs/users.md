@@ -10,16 +10,21 @@ Covers user accounts, profile data, and the Cosy+ plan tier.
 
 **`UserEntity`** (`user_entity` table):
 
-| Field | Type | Notes |
-|---|---|---|
-| `uuid` | String (UUID) | Primary key, auto-generated |
-| `username` | String | Unique (case-insensitive lookup), not null |
-| `email` | String | Not null |
-| `passwordHash` | String | BCrypt hash (strength 10) |
+| Field          | Type          | Notes                                      |
+|----------------|---------------|--------------------------------------------|
+| `uuid`         | String (UUID) | Primary key, auto-generated                |
+| `username`     | String        | Unique (case-insensitive lookup), not null |
+| `email`        | String        | Not null                                   |
+| `passwordHash` | String        | BCrypt hash (strength 10)                  |
 
 **`UserDto`** (response):
+
 ```json
-{ "uuid": "...", "username": "janne", "email": "janne@example.net" }
+{
+  "uuid": "...",
+  "username": "janne",
+  "email": "janne@example.net"
+}
 ```
 
 ### Endpoints
@@ -37,8 +42,13 @@ Response: `UserDto[]`
 Creates a user directly (no login session). Intended for admin use.
 
 Request (`UserCreationDto`):
+
 ```json
-{ "username": "janne", "email": "janne@example.net", "password": "hunter2" }
+{
+  "username": "janne",
+  "email": "janne@example.net",
+  "password": "hunter2"
+}
 ```
 
 Response: `UserDto` (201 Created)
@@ -59,6 +69,7 @@ Response: UserDto
 ```
 
 Constraints:
+
 - Username: same validation rules as registration
 - Email change: triggers re-verification (set `emailVerified=false`, send new OTP)
 - Username change: enforce uniqueness
@@ -80,6 +91,7 @@ Body: { "password": "hunter2" }  # confirm with password
 ```
 
 Logic:
+
 1. Verify password
 2. For each owned subdomain: call `Route53Service.deleteARecord` (best-effort)
 3. Delete all `SubdomainEntity` records
@@ -89,6 +101,7 @@ Logic:
 ### Restrict `GET /api/v1/user`
 
 Change to require an admin role or remove the public listing. Options:
+
 - Add `role` field to `UserEntity` (ADMIN / USER)
 - Require `role=ADMIN` in JWT claims for this endpoint
 - Or simply remove the endpoint (user listing is not needed in the domain-provider product)
@@ -97,17 +110,18 @@ Change to require an admin role or remove the public listing. Options:
 
 ## Cosy+ billing tier
 
-The Cosy+ tier (€3/month) unlocks custom subdomain names, up to 5 domains, CNAME support, and priority TLS renewal. Revenue supports the Cosy core team.
+The Cosy+ tier (€1/month) unlocks custom subdomain names, up to 5 domains, CNAME support, and priority TLS renewal.
+Revenue supports the Cosy core team.
 
 ### Schema changes
 
 Add to `UserEntity`:
 
-| Field | Type | Notes |
-|---|---|---|
-| `plan` | Plan enum | FREE (default) / PLUS |
-| `planExpiresAt` | Instant | nullable; null = no active subscription |
-| `stripeCustomerId` | String | nullable; Stripe customer ID |
+| Field              | Type      | Notes                                   |
+|--------------------|-----------|-----------------------------------------|
+| `plan`             | Plan enum | FREE (default) / PLUS                   |
+| `planExpiresAt`    | Instant   | nullable; null = no active subscription |
+| `stripeCustomerId` | String    | nullable; Stripe customer ID            |
 
 **`Plan` enum:** `FREE`, `PLUS`
 
@@ -132,6 +146,7 @@ POST /api/v1/billing/webhook
 ### Plan enforcement
 
 `SubdomainService` checks `user.plan` before allowing:
+
 - Custom label choice (Cosy+ only — free users must use auto-generated labels)
 - CNAME registration (Cosy+ only)
 
@@ -140,6 +155,10 @@ Quota remains 5 for both tiers (free gets auto-assigned labels up to 5).
 ### Identity token claims
 
 Add `plan` to the identity token payload so the frontend can gate UI without an extra API call:
+
 ```json
-{ ..., "plan": "PLUS" }
+{
+  ...,
+  "plan": "PLUS"
+}
 ```

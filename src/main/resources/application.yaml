@@ -15,7 +15,6 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-
 aws:
   region: eu-central-1
   route53:
@@ -33,8 +32,18 @@ client:
     url: ${MAIL_API_URL}
     api-key: ${MAIL_API_KEY}
 
+frontend:
+  url: ${FRONTEND_URL:http://localhost:5173}
+
+stripe:
+  api-key: ${STRIPE_API_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  product-id: ${STRIPE_PRODUCT_ID}
+  price-id: ${STRIPE_PRICE_ID}
+
 oauth:
-  frontend-url: http://localhost:5173
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  secure-cookie: ${OAUTH_SECURE_COOKIE:false}
   providers:
     google:
       client-id: ${OAUTH_GOOGLE_CLIENT_ID}
@@ -43,7 +52,7 @@ oauth:
       token-uri: https://oauth2.googleapis.com/token
       user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
       scope: openid email profile
-      callback-uri: http://localhost:8080/api/v1/auth/oauth/google/callback
+      callback-uri: ${OAUTH_GOOGLE_CALLBACK_URI:http://localhost:8080/api/v1/auth/oauth/google/callback}
     github:
       client-id: ${OAUTH_GITHUB_CLIENT_ID}
       client-secret: ${OAUTH_GITHUB_CLIENT_SECRET}
@@ -51,7 +60,7 @@ oauth:
       token-uri: https://github.com/login/oauth/access_token
       user-info-uri: https://api.github.com/user
       scope: read:user,user:email
-      callback-uri: http://localhost:8080/api/v1/auth/oauth/github/callback
+      callback-uri: ${OAUTH_GITHUB_CALLBACK_URI:http://localhost:8080/api/v1/auth/oauth/github/callback}
     discord:
       client-id: ${OAUTH_DISCORD_CLIENT_ID}
       client-secret: ${OAUTH_DISCORD_CLIENT_SECRET}
@@ -59,10 +68,11 @@ oauth:
       token-uri: https://discord.com/api/oauth2/token
       user-info-uri: https://discord.com/api/users/@me
       scope: identify email
-      callback-uri: http://localhost:8080/api/v1/auth/oauth/discord/callback
+      callback-uri: ${OAUTH_DISCORD_CALLBACK_URI:http://localhost:8080/api/v1/auth/oauth/discord/callback}
 
 subdomain:
-  max-per-user: 5
+  max-per-free-user: 1
+  max-per-plus-user: 5
   reserved-labels:
     - www
     - api

@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "oauth")
 public class OAuthProperties {
     private String frontendUrl = "http://localhost:5173";
+    private boolean secureCookie = false;
     private Map<String, ProviderConfig> providers;
 
     @Data

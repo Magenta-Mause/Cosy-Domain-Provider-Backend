@@ -9,7 +9,7 @@ import lombok.*;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "providerSubject"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "provider_subject"}))
 public class OAuthIdentityEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

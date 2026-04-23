@@ -33,10 +33,28 @@ class GoogleOAuthProvider implements OAuthProviderClient {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to fetch user info");
         }
 
-        Object name = raw.get("name");
-        return new OAuthUserInfo(
-                String.valueOf(raw.get("sub")),
-                String.valueOf(raw.get("email")),
-                name != null ? String.valueOf(name) : String.valueOf(raw.get("email")));
+        String subject = requiredStringClaim(raw, "sub");
+        String email = requiredStringClaim(raw, "email");
+        String name = optionalStringClaim(raw, "name");
+
+        return new OAuthUserInfo(subject, email, name != null ? name : email);
+    }
+
+    private String requiredStringClaim(Map<String, Object> raw, String claimName) {
+        String value = optionalStringClaim(raw, claimName);
+        if (value == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "Missing required user info field: " + claimName);
+        }
+        return value;
+    }
+
+    private String optionalStringClaim(Map<String, Object> raw, String claimName) {
+        Object value = raw.get(claimName);
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString().trim();
+        return text.isEmpty() ? null : text;
     }
 }

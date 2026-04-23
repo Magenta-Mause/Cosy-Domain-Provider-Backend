@@ -5,7 +5,7 @@ Spring Boot REST API for managing `cosy-hosting.net` subdomains. Frontend: `../c
 ## Commands
 
 ```bash
-mvn spring-boot:run -Plocal  # Start dev server at localhost:8080 (loads .env via spring-dotenv)
+mvn spring-boot:run           # Start dev server at localhost:8080 (env vars set via IDE run config)
 mvn test                     # Run all tests
 mvn verify                   # Full build + tests
 mvn compile                  # Compile only (fast sanity check)

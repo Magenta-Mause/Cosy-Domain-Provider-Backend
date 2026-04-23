@@ -34,8 +34,18 @@ class DiscordOAuthProvider implements OAuthProviderClient {
         }
 
         return new OAuthUserInfo(
-                String.valueOf(raw.get("id")),
-                String.valueOf(raw.get("email")),
-                String.valueOf(raw.get("username")));
+                getRequiredString(raw, "id"),
+                getRequiredString(raw, "email"),
+                getRequiredString(raw, "username"));
+    }
+
+    private String getRequiredString(Map<String, Object> raw, String fieldName) {
+        Object value = raw.get(fieldName);
+        if (!(value instanceof String stringValue) || stringValue.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Missing required Discord user info field: " + fieldName);
+        }
+        return stringValue;
     }
 }

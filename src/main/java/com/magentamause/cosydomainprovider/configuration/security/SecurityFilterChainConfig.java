@@ -30,6 +30,7 @@ public class SecurityFilterChainConfig {
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
                                                 "/v3/api-docs/**",
+                                                "/api/v1/stripe-events",
                                                 "/actuator/**",
                                                 "/swagger-ui/**")
                                         .permitAll()

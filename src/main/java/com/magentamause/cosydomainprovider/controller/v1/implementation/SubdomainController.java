@@ -1,17 +1,19 @@
-package com.magentamause.cosydomainprovider.controller.v1.impl;
+package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
 import com.magentamause.cosydomainprovider.controller.v1.schema.SubdomainApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.SubdomainCreationDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
+import com.magentamause.cosydomainprovider.model.core.LabelAvailabilityDto;
 import com.magentamause.cosydomainprovider.model.core.SubdomainDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.SubdomainService;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +21,11 @@ public class SubdomainController implements SubdomainApi {
 
     private final SubdomainService subdomainService;
     private final SecurityContextService securityContextService;
+
+    @Override
+    public ResponseEntity<LabelAvailabilityDto> checkLabelAvailability(String label) {
+        return ResponseEntity.ok(subdomainService.checkLabelAvailability(label));
+    }
 
     @Override
     public ResponseEntity<List<SubdomainDto>> listMySubdomains() {

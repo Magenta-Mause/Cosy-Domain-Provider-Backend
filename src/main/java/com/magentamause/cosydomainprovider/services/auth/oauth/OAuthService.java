@@ -71,6 +71,7 @@ public class OAuthService {
         OAuthUserInfo userInfo = providers.get(provider)
                 .fetchUserInfo(accessToken, webClient, config.getUserInfoUri());
 
+        validateUserInfo(provider, userInfo);
         return resolveUser(provider, userInfo);
     }
 
@@ -78,6 +79,20 @@ public class OAuthService {
         if (!stateStore.consumeState(state)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired OAuth state");
         }
+    }
+
+    private void validateUserInfo(String provider, OAuthUserInfo userInfo) {
+        if (userInfo == null
+                || isMissingRequiredField(userInfo.subject())
+                || isMissingRequiredField(userInfo.email())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "OAuth provider returned incomplete user information for " + provider);
+        }
+    }
+
+    private boolean isMissingRequiredField(String value) {
+        return value == null || value.trim().isEmpty() || "null".equalsIgnoreCase(value.trim());
     }
 
     private String exchangeCodeForToken(
@@ -158,7 +173,17 @@ public class OAuthService {
         if (!providers.containsKey(provider)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown provider: " + provider);
         }
-        return oAuthProperties.getProviders().get(provider);
+        Map<String, OAuthProperties.ProviderConfig> providerConfigs = oAuthProperties.getProviders();
+        if (providerConfigs == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Missing OAuth configuration for provider: " + provider);
+        }
+        OAuthProperties.ProviderConfig config = providerConfigs.get(provider);
+        if (config == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Missing OAuth configuration for provider: " + provider);
+        }
+        return config;
     }
 
     private String encode(String value) {

@@ -31,9 +31,9 @@ public interface OAuthApi {
     @Operation(summary = "Handle OAuth2 callback",
             description = "Exchanges the authorization code for a token, resolves or creates the local user, and sets the refresh token cookie. Redirects to the frontend on success or failure.")
     @ApiResponses({
-        @ApiResponse(responseCode = "302", description = "Redirect to frontend (dashboard on success, /login?oauthError=true on failure)"),
-        @ApiResponse(responseCode = "400", description = "Invalid or expired state / unknown provider"),
-        @ApiResponse(responseCode = "502", description = "Token exchange or user-info fetch failed")
+        @ApiResponse(responseCode = "302", description = "Redirect to frontend (dashboard on success, /login?oauthError=true on failure, including upstream OAuth errors)"),
+        @ApiResponse(responseCode = "400", description = "Invalid or expired state / unknown provider (ResponseStatusException propagated)"),
+        @ApiResponse(responseCode = "502", description = "Token exchange or user-info fetch failed (ResponseStatusException propagated)")
     })
     @GetMapping("/{provider}/callback")
     void callback(

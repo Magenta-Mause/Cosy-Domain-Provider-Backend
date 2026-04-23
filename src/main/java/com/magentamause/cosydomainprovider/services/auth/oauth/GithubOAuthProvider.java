@@ -61,8 +61,8 @@ class GithubOAuthProvider implements OAuthProviderClient {
         return emails.stream()
                 .filter(e -> Boolean.TRUE.equals(e.get("primary")) && Boolean.TRUE.equals(e.get("verified")))
                 .findFirst()
-                .or(() -> emails.stream().findFirst())
+                .or(() -> emails.stream().filter(e -> Boolean.TRUE.equals(e.get("verified"))).findFirst())
                 .map(e -> String.valueOf(e.get("email")))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_GATEWAY, "No usable GitHub email"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_GATEWAY, "No verified GitHub email available"));
     }
 }

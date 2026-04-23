@@ -1,4 +1,4 @@
-package com.magentamause.cosydomainprovider.controller.v1.impl;
+package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
 import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
 import com.magentamause.cosydomainprovider.controller.v1.schema.OAuthApi;
@@ -12,8 +12,10 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestController
@@ -48,7 +50,7 @@ public class OAuthController implements OAuthApi {
             ResponseCookie cookie =
                     ResponseCookie.from("refreshToken", refreshToken)
                             .httpOnly(true)
-                            .secure(false)
+                            .secure(oAuthProperties.isSecureCookie())
                             .maxAge(
                                     jwtUtils.getTokenValidityDuration(
                                                     JwtTokenBody.TokenType.REFRESH_TOKEN)
@@ -59,6 +61,8 @@ public class OAuthController implements OAuthApi {
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             response.sendRedirect(oAuthProperties.getFrontendUrl() + "/dashboard");
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             log.error("OAuth callback failed for provider {}", provider, e);
             response.sendRedirect(oAuthProperties.getFrontendUrl() + "/login?oauthError=true");

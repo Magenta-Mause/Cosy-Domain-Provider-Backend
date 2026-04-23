@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Verify Your Account</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #d4b896;
+            font-family: 'VT323', monospace;
+        }
+
+        .wrapper {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #e8d5b7;
+            border: 3px solid #5c3d2e;
+            box-shadow: 6px 6px 0 #5c3d2e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #5c3d2e;
+            padding: 28px 32px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: #e8d5b7;
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        .header .pixel-icon {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .body {
+            padding: 32px;
+        }
+
+        .greeting {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            color: #5c3d2e;
+            margin-bottom: 20px;
+            line-height: 2;
+        }
+
+        .message {
+            font-size: 20px;
+            color: #3d2b1a;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .token-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: #5c3d2e;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .token-box {
+            background-color: #2a1a0e;
+            border: 2px solid #5c3d2e;
+            box-shadow: 4px 4px 0 #3d2b1a;
+            border-radius: 4px;
+            padding: 18px 20px;
+            margin-bottom: 28px;
+        }
+
+        .token-box code {
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            color: #7ecac3;
+            word-break: break-all;
+            letter-spacing: 1px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background-color: #5c3d2e;
+            color: #e8d5b7 !important;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 14px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            box-shadow: 4px 4px 0 #3d2b1a;
+            margin-bottom: 28px;
+        }
+
+        .divider {
+            border: none;
+            border-top: 2px dashed #b09070;
+            margin: 24px 0;
+        }
+
+        .footer {
+            background-color: #c9a97d;
+            border-top: 3px solid #5c3d2e;
+            padding: 20px 32px;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 18px;
+            color: #5c3d2e;
+            line-height: 1.6;
+        }
+
+        .footer .brand {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #3d2b1a;
+            margin-top: 10px;
+            display: block;
+            letter-spacing: 1px;
+        }
+
+        .token-box-code {
+            display: flex;
+            gap: 2px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <span class="pixel-icon">&#128274;</span>
+        <h1>VERIFY YOUR<br/>MAILBOX</h1>
+    </div>
+    <div class="body">
+        <p class="greeting">&gt; HELLO, <span th:text="${username}"></span></p>
+        <p class="message">
+            Welcome to Cosy Domain Provider!<br/>
+            Click the button below to verify your email address, or enter the code manually.
+        </p>
+        <div style="text-align:center; margin-bottom: 28px;">
+            <a class="cta-btn" th:href="${verifyLink}">Verify my email &rarr;</a>
+        </div>
+        <p class="token-label">// OR ENTER THIS CODE MANUALLY</p>
+        <div class="token-box">
+            <code class="token-box-code" th:utext="${accessToken}"></code>
+            </code>
+        </div>
+        <p class="message" style="text-align:center; font-size: 14px; opacity: 0.75;">
+            This code is valid for <strong>3 hours</strong>.
+        </p>
+        <hr class="divider"/>
+        <p class="message">
+            If you did not create an account, you can safely ignore this email.
+        </p>
+    </div>
+    <div class="footer">
+        <p>Happy domain managing! &#127968;</p>
+        <span class="brand">COSY DOMAIN PROVIDER &mdash; &copy; 2026</span>
+    </div>
+</div>
+</body>
+</html>

@@ -48,7 +48,6 @@ public class SubdomainService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Subdomain " + uuid + " not found"));
         if (!entity.getOwner().getUuid().equals(owner.getUuid())) {
-            // Don't leak existence to non-owners.
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Subdomain " + uuid + " not found");
         }
@@ -148,16 +147,22 @@ public class SubdomainService {
         return subdomainRepository.save(entity);
     }
 
-    public void deleteSubdomain(String uuid, UserEntity owner) {
-        SubdomainEntity entity = getOwnedSubdomain(uuid, owner);
+    public void deleteSubdomain(String uuid) {
+        SubdomainEntity entity =
+                subdomainRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Subdomain " + uuid + " not found"));
         try {
             route53Service.deleteARecord(entity.getLabel(), entity.getTargetIp());
             subdomainRepository.delete(entity);
             log.info(
                     "Deleted subdomain {}.{} for user {}",
                     entity.getLabel(),
-                    route53Properties.getDomain(),
-                    owner.getUuid());
+                    route53Properties.getDomain());
         } catch (Exception e) {
             entity.setStatus(SubdomainStatus.FAILED);
             subdomainRepository.save(entity);
@@ -173,8 +178,16 @@ public class SubdomainService {
         }
     }
 
+    public void deleteSubdomain(String uuid, UserEntity owner) {
+        getOwnedSubdomain(uuid, owner);
+        deleteSubdomain(uuid);
+    }
+
     public LabelAvailabilityDto checkLabelAvailability(String label) {
         String normalized = label.toLowerCase(Locale.ROOT);
+        if (normalized.length() < 3) {
+            return LabelAvailabilityDto.unavailable("too short");
+        }
         if (subdomainProperties.getReservedLabels().stream()
                 .anyMatch(normalized::equalsIgnoreCase)) {
             return LabelAvailabilityDto.unavailable("reserved");
@@ -187,5 +200,10 @@ public class SubdomainService {
 
     public String getParentDomain() {
         return route53Properties.getDomain();
+    }
+
+    public void deleteSubdomainsByOwner(String uuid) {
+        List<SubdomainEntity> subdomains = subdomainRepository.findAllByOwner_Uuid(uuid);
+        subdomains.stream().forEach(subdomain -> deleteSubdomain(subdomain.getUuid()));
     }
 }

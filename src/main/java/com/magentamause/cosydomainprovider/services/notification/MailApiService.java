@@ -4,9 +4,11 @@ import com.magentamause.cosydomainprovider.client.MailApiClient;
 import com.magentamause.cosydomainprovider.client.mail.model.SendMailDto;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MailApiService implements MessagingService {
@@ -62,12 +64,11 @@ public class MailApiService implements MessagingService {
                 .subscribe(
                         response -> {
                             if (response.isSuccess()) {
-                                System.out.println(
-                                        "Password reset email sent to " + user.getEmail());
+                                log.info("Password reset email sent to {}", user.getEmail());
                             } else {
-                                System.err.println(
-                                        "Failed to send password reset email to "
-                                                + user.getEmail());
+                                log.error(
+                                        "Failed to send password reset email to {}",
+                                        user.getEmail());
                             }
                         },
                         error ->

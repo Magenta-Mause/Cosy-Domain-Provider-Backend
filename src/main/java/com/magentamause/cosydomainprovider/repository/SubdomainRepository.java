@@ -12,4 +12,6 @@ public interface SubdomainRepository extends JpaRepository<SubdomainEntity, Stri
     List<SubdomainEntity> findAllByOwner(UserEntity owner);
 
     long countByOwner(UserEntity owner);
+
+    List<SubdomainEntity> findAllByOwner_Uuid(String ownerUuid);
 }

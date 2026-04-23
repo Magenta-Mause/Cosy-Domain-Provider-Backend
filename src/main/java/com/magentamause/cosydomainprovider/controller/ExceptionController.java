@@ -51,6 +51,7 @@ public class ExceptionController {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiException> handleDataIntegrityViolation(
             DataIntegrityViolationException e, HttpServletRequest request) {
+        log.warn("Data integrity violation: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(
                         ApiException.builder()

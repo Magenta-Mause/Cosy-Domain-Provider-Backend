@@ -1,6 +1,6 @@
 services:
   cosy-dev-postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: cosy-domain-provider-dev-postgres
     ports:
       - "5432:5432"

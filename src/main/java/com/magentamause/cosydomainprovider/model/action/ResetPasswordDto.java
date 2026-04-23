@@ -6,8 +6,7 @@ import lombok.Data;
 
 @Data
 public class ResetPasswordDto {
-    @NotBlank
-    private String token;
+    @NotBlank private String token;
 
     @Size(min = 8)
     private String newPassword;

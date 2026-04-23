@@ -2,7 +2,6 @@ package com.magentamause.cosydomainprovider.model.core;
 
 import lombok.Builder;
 import lombok.Data;
-import com.magentamause.cosydomainprovider.model.core.Plan;
 
 @Data
 @Builder

@@ -9,9 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.*;
-
 import java.time.Instant;
+import lombok.*;
 
 @Getter
 @Setter
@@ -29,6 +28,7 @@ public class UserEntity {
 
     @Column(unique = true, nullable = false)
     private String email;
+
     private String passwordHash;
 
     private String accessToken;

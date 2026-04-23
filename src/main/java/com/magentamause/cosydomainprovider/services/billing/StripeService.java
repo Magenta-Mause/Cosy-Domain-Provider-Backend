@@ -16,14 +16,13 @@ import com.stripe.model.Subscription;
 import com.stripe.net.Webhook;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.billingportal.SessionCreateParams;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.time.Instant;
 
 @Slf4j
 @Service
@@ -39,14 +38,19 @@ public class StripeService {
     public String createBillingPortalSession(UserEntity user) {
         try {
             String customerId = getOrCreateCustomerId(user);
-            SessionCreateParams params = SessionCreateParams.builder()
-                    .setCustomer(customerId)
-                    .setReturnUrl(frontendUrl + "/billing")
-                    .build();
+            SessionCreateParams params =
+                    SessionCreateParams.builder()
+                            .setCustomer(customerId)
+                            .setReturnUrl(frontendUrl + "/billing")
+                            .build();
             return com.stripe.model.billingportal.Session.create(params).getUrl();
         } catch (StripeException e) {
-            log.error("Failed to create billing portal session for user {}: {}", user.getUuid(), e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to create billing portal session");
+            log.error(
+                    "Failed to create billing portal session for user {}: {}",
+                    user.getUuid(),
+                    e.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "Failed to create billing portal session");
         }
     }
 
@@ -55,7 +59,8 @@ public class StripeService {
             String customerId = getOrCreateCustomerId(user);
             com.stripe.param.checkout.SessionCreateParams params =
                     com.stripe.param.checkout.SessionCreateParams.builder()
-                            .setMode(com.stripe.param.checkout.SessionCreateParams.Mode.SUBSCRIPTION)
+                            .setMode(
+                                    com.stripe.param.checkout.SessionCreateParams.Mode.SUBSCRIPTION)
                             .setCustomer(customerId)
                             .addLineItem(
                                     com.stripe.param.checkout.SessionCreateParams.LineItem.builder()
@@ -68,13 +73,19 @@ public class StripeService {
                             .build();
             return com.stripe.model.checkout.Session.create(params).getUrl();
         } catch (StripeException e) {
-            log.error("Failed to create checkout session for user {}: {}", user.getUuid(), e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to create checkout session");
+            log.error(
+                    "Failed to create checkout session for user {}: {}",
+                    user.getUuid(),
+                    e.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "Failed to create checkout session");
         }
     }
 
-    public void handleWebhookEvent(String payload, String sigHeader) throws SignatureVerificationException {
-        Event event = Webhook.constructEvent(payload, sigHeader, stripeProperties.getWebhookSecret());
+    public void handleWebhookEvent(String payload, String sigHeader)
+            throws SignatureVerificationException {
+        Event event =
+                Webhook.constructEvent(payload, sigHeader, stripeProperties.getWebhookSecret());
 
         switch (event.getType()) {
             case "invoice.payment_succeeded" -> handleInvoicePaymentSucceeded(event);
@@ -87,11 +98,12 @@ public class StripeService {
         if (user.getStripeCustomerId() != null) {
             return user.getStripeCustomerId();
         }
-        CustomerCreateParams params = CustomerCreateParams.builder()
-                .setEmail(user.getEmail())
-                .setName(user.getUsername())
-                .putMetadata("userId", user.getUuid())
-                .build();
+        CustomerCreateParams params =
+                CustomerCreateParams.builder()
+                        .setEmail(user.getEmail())
+                        .setName(user.getUsername())
+                        .putMetadata("userId", user.getUuid())
+                        .build();
         Customer customer = Customer.create(params);
         user.setStripeCustomerId(customer.getId());
         userRepository.save(user);
@@ -111,7 +123,8 @@ public class StripeService {
             user.setPlanExpiresAt(Instant.ofEpochSecond(invoice.getPeriodEnd()));
         }
         userRepository.save(user);
-        log.info("User {} plan set to PLUS, expires at {}", user.getUuid(), user.getPlanExpiresAt());
+        log.info(
+                "User {} plan set to PLUS, expires at {}", user.getUuid(), user.getPlanExpiresAt());
     }
 
     private void handleSubscriptionDeleted(Event event) {
@@ -144,9 +157,12 @@ public class StripeService {
 
     private UserEntity findByStripeCustomerId(String customerId) {
         if (customerId == null) return null;
-        return userRepository.findByStripeCustomerId(customerId).orElseGet(() -> {
-            log.warn("No user found for Stripe customerId: {}", customerId);
-            return null;
-        });
+        return userRepository
+                .findByStripeCustomerId(customerId)
+                .orElseGet(
+                        () -> {
+                            log.warn("No user found for Stripe customerId: {}", customerId);
+                            return null;
+                        });
     }
 }

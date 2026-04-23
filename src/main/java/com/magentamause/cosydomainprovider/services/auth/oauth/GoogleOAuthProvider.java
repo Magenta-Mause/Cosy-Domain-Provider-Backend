@@ -17,7 +17,8 @@ class GoogleOAuthProvider implements OAuthProviderClient {
 
     @Override
     @SuppressWarnings("unchecked")
-    public OAuthUserInfo fetchUserInfo(String accessToken, WebClient webClient, String userInfoUri) {
+    public OAuthUserInfo fetchUserInfo(
+            String accessToken, WebClient webClient, String userInfoUri) {
         Map<String, Object> raw =
                 (Map<String, Object>)
                         webClient

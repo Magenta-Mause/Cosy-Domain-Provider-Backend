@@ -47,8 +47,11 @@ public class OAuthService {
         this.userRepository = userRepository;
         this.stateStore = stateStore;
         this.webClient = webClient;
-        this.providers = providerList.stream()
-                .collect(Collectors.toMap(OAuthProviderClient::providerName, Function.identity()));
+        this.providers =
+                providerList.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        OAuthProviderClient::providerName, Function.identity()));
     }
 
     public String buildAuthorizationUrl(String provider) {
@@ -56,11 +59,15 @@ public class OAuthService {
         String state = stateStore.generateState();
 
         return config.getAuthorizationUri()
-                + "?client_id=" + encode(config.getClientId())
-                + "&redirect_uri=" + encode(config.getCallbackUri())
+                + "?client_id="
+                + encode(config.getClientId())
+                + "&redirect_uri="
+                + encode(config.getCallbackUri())
                 + "&response_type=code"
-                + "&scope=" + encode(config.getScope())
-                + "&state=" + encode(state);
+                + "&scope="
+                + encode(config.getScope())
+                + "&state="
+                + encode(state);
     }
 
     public UserEntity handleCallback(String provider, String code, String state) {
@@ -68,8 +75,10 @@ public class OAuthService {
         OAuthProperties.ProviderConfig config = requireProvider(provider);
 
         String accessToken = exchangeCodeForToken(provider, config, code);
-        OAuthUserInfo userInfo = providers.get(provider)
-                .fetchUserInfo(accessToken, webClient, config.getUserInfoUri());
+        OAuthUserInfo userInfo =
+                providers
+                        .get(provider)
+                        .fetchUserInfo(accessToken, webClient, config.getUserInfoUri());
 
         validateUserInfo(provider, userInfo);
         return resolveUser(provider, userInfo);
@@ -77,7 +86,8 @@ public class OAuthService {
 
     private void validateState(String state) {
         if (!stateStore.consumeState(state)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired OAuth state");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Invalid or expired OAuth state");
         }
     }
 
@@ -134,9 +144,10 @@ public class OAuthService {
             return existingIdentity.get().getUser();
         }
 
-        UserEntity user = userRepository
-                .findByEmailIgnoreCase(userInfo.email())
-                .orElseGet(() -> createOAuthUser(userInfo));
+        UserEntity user =
+                userRepository
+                        .findByEmailIgnoreCase(userInfo.email())
+                        .orElseGet(() -> createOAuthUser(userInfo));
 
         oAuthIdentityRepository.save(
                 OAuthIdentityEntity.builder()
@@ -171,17 +182,21 @@ public class OAuthService {
 
     private OAuthProperties.ProviderConfig requireProvider(String provider) {
         if (!providers.containsKey(provider)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown provider: " + provider);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Unknown provider: " + provider);
         }
-        Map<String, OAuthProperties.ProviderConfig> providerConfigs = oAuthProperties.getProviders();
+        Map<String, OAuthProperties.ProviderConfig> providerConfigs =
+                oAuthProperties.getProviders();
         if (providerConfigs == null) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Missing OAuth configuration for provider: " + provider);
+                    HttpStatus.BAD_REQUEST,
+                    "Missing OAuth configuration for provider: " + provider);
         }
         OAuthProperties.ProviderConfig config = providerConfigs.get(provider);
         if (config == null) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Missing OAuth configuration for provider: " + provider);
+                    HttpStatus.BAD_REQUEST,
+                    "Missing OAuth configuration for provider: " + provider);
         }
         return config;
     }

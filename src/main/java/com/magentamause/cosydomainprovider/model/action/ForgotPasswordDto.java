@@ -6,7 +6,5 @@ import lombok.Data;
 
 @Data
 public class ForgotPasswordDto {
-    @NotBlank
-    @Email
-    private String email;
+    @NotBlank @Email private String email;
 }

@@ -12,7 +12,6 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -37,11 +36,7 @@ public class OAuthController implements OAuthApi {
     }
 
     @Override
-    public void callback(
-            String provider,
-            String code,
-            String state,
-            HttpServletResponse response)
+    public void callback(String provider, String code, String state, HttpServletResponse response)
             throws IOException {
         try {
             UserEntity user = oAuthService.handleCallback(provider, code, state);

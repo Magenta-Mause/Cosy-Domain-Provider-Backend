@@ -18,7 +18,8 @@ class GithubOAuthProvider implements OAuthProviderClient {
 
     @Override
     @SuppressWarnings("unchecked")
-    public OAuthUserInfo fetchUserInfo(String accessToken, WebClient webClient, String userInfoUri) {
+    public OAuthUserInfo fetchUserInfo(
+            String accessToken, WebClient webClient, String userInfoUri) {
         Map<String, Object> raw =
                 (Map<String, Object>)
                         webClient
@@ -34,11 +35,13 @@ class GithubOAuthProvider implements OAuthProviderClient {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to fetch user info");
         }
 
-        String email = raw.get("email") != null
-                ? String.valueOf(raw.get("email"))
-                : fetchPrimaryEmail(accessToken, webClient);
+        String email =
+                raw.get("email") != null
+                        ? String.valueOf(raw.get("email"))
+                        : fetchPrimaryEmail(accessToken, webClient);
 
-        return new OAuthUserInfo(String.valueOf(raw.get("id")), email, String.valueOf(raw.get("login")));
+        return new OAuthUserInfo(
+                String.valueOf(raw.get("id")), email, String.valueOf(raw.get("login")));
     }
 
     @SuppressWarnings("unchecked")
@@ -55,14 +58,26 @@ class GithubOAuthProvider implements OAuthProviderClient {
                                 .block();
 
         if (emails == null || emails.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Could not retrieve GitHub email");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "Could not retrieve GitHub email");
         }
 
         return emails.stream()
-                .filter(e -> Boolean.TRUE.equals(e.get("primary")) && Boolean.TRUE.equals(e.get("verified")))
+                .filter(
+                        e ->
+                                Boolean.TRUE.equals(e.get("primary"))
+                                        && Boolean.TRUE.equals(e.get("verified")))
                 .findFirst()
-                .or(() -> emails.stream().filter(e -> Boolean.TRUE.equals(e.get("verified"))).findFirst())
+                .or(
+                        () ->
+                                emails.stream()
+                                        .filter(e -> Boolean.TRUE.equals(e.get("verified")))
+                                        .findFirst())
                 .map(e -> String.valueOf(e.get("email")))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_GATEWAY, "No verified GitHub email available"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.BAD_GATEWAY,
+                                        "No verified GitHub email available"));
     }
 }

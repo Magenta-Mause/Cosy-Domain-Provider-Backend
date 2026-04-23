@@ -11,11 +11,9 @@ import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -62,11 +60,13 @@ public class SubdomainService {
     }
 
     public SubdomainEntity createSubdomain(SubdomainCreationDto dto, UserEntity owner) {
-        String label = owner.getPlan() == Plan.PLUS
-                ? dto.getLabel().toLowerCase(Locale.ROOT)
-                : UUID.randomUUID().toString().substring(0, 8);
+        String label =
+                owner.getPlan() == Plan.PLUS
+                        ? dto.getLabel().toLowerCase(Locale.ROOT)
+                        : UUID.randomUUID().toString().substring(0, 8);
         if (!checkCanUserCreateSubdomain(owner)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
         }
 
         if (subdomainProperties.getReservedLabels().stream().anyMatch(label::equalsIgnoreCase)) {
@@ -75,13 +75,13 @@ public class SubdomainService {
         }
 
         long ownedCount = subdomainRepository.countByOwner(owner);
-        int limit = owner.getPlan() == Plan.PLUS
-                ? subdomainProperties.getMaxPerPlusUser()
-                : subdomainProperties.getMaxPerFreeUser();
+        int limit =
+                owner.getPlan() == Plan.PLUS
+                        ? subdomainProperties.getMaxPerPlusUser()
+                        : subdomainProperties.getMaxPerFreeUser();
         if (ownedCount >= limit) {
             throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Subdomain quota reached (" + limit + " per user)");
+                    HttpStatus.FORBIDDEN, "Subdomain quota reached (" + limit + " per user)");
         }
 
         if (subdomainRepository.findByLabelIgnoreCase(label).isPresent()) {
@@ -175,7 +175,8 @@ public class SubdomainService {
 
     public LabelAvailabilityDto checkLabelAvailability(String label) {
         String normalized = label.toLowerCase(Locale.ROOT);
-        if (subdomainProperties.getReservedLabels().stream().anyMatch(normalized::equalsIgnoreCase)) {
+        if (subdomainProperties.getReservedLabels().stream()
+                .anyMatch(normalized::equalsIgnoreCase)) {
             return LabelAvailabilityDto.unavailable("reserved");
         }
         if (subdomainRepository.findByLabelIgnoreCase(normalized).isPresent()) {

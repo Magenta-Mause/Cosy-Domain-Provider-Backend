@@ -8,12 +8,11 @@ import com.magentamause.cosydomainprovider.model.core.LabelAvailabilityDto;
 import com.magentamause.cosydomainprovider.model.core.SubdomainDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.SubdomainService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

@@ -38,6 +38,14 @@ public class AdminUserController implements AdminApi {
     }
 
     @Override
+    public ResponseEntity<AdminSubdomainDto> getSubdomain(String adminKey, String uuid) {
+        validateKey(adminKey);
+        SubdomainEntity subdomain = subdomainRepository.findById(uuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Subdomain not found"));
+        return ResponseEntity.ok(toAdminSubdomainDto(subdomain));
+    }
+
+    @Override
     public ResponseEntity<List<AdminUserDto>> getAllUsers(String adminKey) {
         validateKey(adminKey);
         List<AdminUserDto> dtos = userRepository.findAll().stream()

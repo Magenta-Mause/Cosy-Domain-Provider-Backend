@@ -33,6 +33,18 @@ public interface AdminApi {
             @Parameter(description = "Admin secret key") @RequestHeader("X-Admin-Key")
                     String adminKey);
 
+    @Operation(summary = "Get a single subdomain by UUID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Subdomain returned"),
+        @ApiResponse(responseCode = "401", description = "Invalid admin key"),
+        @ApiResponse(responseCode = "404", description = "Subdomain not found")
+    })
+    @GetMapping("/subdomains/{uuid}")
+    ResponseEntity<AdminSubdomainDto> getSubdomain(
+            @Parameter(description = "Admin secret key") @RequestHeader("X-Admin-Key")
+                    String adminKey,
+            @Parameter(description = "Subdomain UUID") @PathVariable String uuid);
+
     @Operation(summary = "List all users")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "User list returned"),

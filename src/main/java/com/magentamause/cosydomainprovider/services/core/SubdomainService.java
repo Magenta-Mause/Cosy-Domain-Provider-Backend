@@ -19,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 /**
  * TODO: add a DuckDNS-style dynamic update endpoint (GET /update?label=...&token=...&ip=...) using
@@ -30,10 +29,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SubdomainService {
 
+    private static final int MAX_LABEL_ATTEMPTS = 25;
+
     private final SubdomainRepository subdomainRepository;
     private final Route53Service route53Service;
     private final SubdomainProperties subdomainProperties;
     private final Route53Properties route53Properties;
+    private final SubdomainNameGenerator nameGenerator;
 
     public List<SubdomainEntity> getSubdomainsForOwner(UserEntity owner) {
         return subdomainRepository.findAllByOwner(owner);
@@ -55,22 +57,13 @@ public class SubdomainService {
         return entity;
     }
 
-    private boolean checkCanUserCreateSubdomain(UserEntity user) {
-        return user.isVerified();
-    }
-
     public SubdomainEntity createSubdomain(SubdomainCreationDto dto, UserEntity owner) {
-        String label = owner.getPlan() == Plan.PLUS
-                ? dto.getLabel().toLowerCase(Locale.ROOT)
-                : UUID.randomUUID().toString().substring(0, 8);
-        if (!checkCanUserCreateSubdomain(owner)) {
+        if (!owner.isVerified()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
         }
 
-        if (subdomainProperties.getReservedLabels().stream().anyMatch(label::equalsIgnoreCase)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Label '" + label + "' is reserved");
-        }
+        String label = resolveLabel(dto, owner);
+        validateLabel(label);
 
         long ownedCount = subdomainRepository.countByOwner(owner);
         int limit = owner.getPlan() == Plan.PLUS
@@ -82,40 +75,17 @@ public class SubdomainService {
                     "Subdomain quota reached (" + limit + " per user)");
         }
 
-        if (subdomainRepository.findByLabelIgnoreCase(label).isPresent()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Label '" + label + "' is already taken");
-        }
-
+        String fqdn = label + "." + route53Properties.getDomain();
         SubdomainEntity entity =
                 SubdomainEntity.builder()
                         .label(label)
+                        .fqdn(fqdn)
                         .owner(owner)
                         .targetIp(dto.getTargetIp())
                         .status(SubdomainStatus.PENDING)
                         .build();
         entity = subdomainRepository.save(entity);
-
-        try {
-            route53Service.upsertARecord(label, dto.getTargetIp());
-            entity.setStatus(SubdomainStatus.ACTIVE);
-            log.info(
-                    "Created subdomain {}.{} -> {} for user {}",
-                    label,
-                    route53Properties.getDomain(),
-                    dto.getTargetIp(),
-                    owner.getUuid());
-        } catch (Exception e) {
-            entity.setStatus(SubdomainStatus.FAILED);
-            log.error(
-                    "Route53 upsert failed for {}.{} -> {}: {}",
-                    label,
-                    route53Properties.getDomain(),
-                    dto.getTargetIp(),
-                    e.getMessage(),
-                    e);
-        }
-        return subdomainRepository.save(entity);
+        return syncToRoute53(entity, dto.getTargetIp(), "Created", owner.getUuid());
     }
 
     public SubdomainEntity updateTargetIp(String uuid, SubdomainUpdateDto dto, UserEntity owner) {
@@ -123,63 +93,20 @@ public class SubdomainService {
         entity.setTargetIp(dto.getTargetIp());
         entity.setStatus(SubdomainStatus.PENDING);
         entity = subdomainRepository.save(entity);
-
-        try {
-            route53Service.upsertARecord(entity.getLabel(), dto.getTargetIp());
-            entity.setStatus(SubdomainStatus.ACTIVE);
-            log.info(
-                    "Updated subdomain {}.{} -> {} for user {}",
-                    entity.getLabel(),
-                    route53Properties.getDomain(),
-                    dto.getTargetIp(),
-                    owner.getUuid());
-        } catch (Exception e) {
-            entity.setStatus(SubdomainStatus.FAILED);
-            log.error(
-                    "Route53 update failed for {}.{} -> {}: {}",
-                    entity.getLabel(),
-                    route53Properties.getDomain(),
-                    dto.getTargetIp(),
-                    e.getMessage(),
-                    e);
-        }
-        return subdomainRepository.save(entity);
+        return syncToRoute53(entity, dto.getTargetIp(), "Updated", owner.getUuid());
     }
 
     public void deleteSubdomain(String uuid) {
         SubdomainEntity entity =
                 subdomainRepository
                         .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Subdomain " + uuid + " not found"));
-        try {
-            route53Service.deleteARecord(entity.getLabel(), entity.getTargetIp());
-            subdomainRepository.delete(entity);
-            log.info(
-                    "Deleted subdomain {}.{} for user {}",
-                    entity.getLabel(),
-                    route53Properties.getDomain());
-        } catch (Exception e) {
-            entity.setStatus(SubdomainStatus.FAILED);
-            subdomainRepository.save(entity);
-            log.error(
-                    "Route53 delete failed for {}.{}: {}",
-                    entity.getLabel(),
-                    route53Properties.getDomain(),
-                    e.getMessage(),
-                    e);
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_GATEWAY,
-                    "Failed to remove DNS record; subdomain marked FAILED and retained for retry");
-        }
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Subdomain " + uuid + " not found"));
+        deleteSubdomain(entity);
     }
 
     public void deleteSubdomain(String uuid, UserEntity owner) {
-        getOwnedSubdomain(uuid, owner);
-        deleteSubdomain(uuid);
+        deleteSubdomain(getOwnedSubdomain(uuid, owner));
     }
 
     public LabelAvailabilityDto checkLabelAvailability(String label) {
@@ -187,11 +114,10 @@ public class SubdomainService {
         if (normalized.length() < 3) {
             return LabelAvailabilityDto.unavailable("too short");
         }
-        if (subdomainProperties.getReservedLabels().stream().anyMatch(normalized::equalsIgnoreCase)) {
-            return LabelAvailabilityDto.unavailable("reserved");
-        }
-        if (subdomainRepository.findByLabelIgnoreCase(normalized).isPresent()) {
-            return LabelAvailabilityDto.unavailable("taken");
+        try {
+            validateLabel(normalized);
+        } catch (ResponseStatusException e) {
+            return LabelAvailabilityDto.unavailable(e.getReason());
         }
         return LabelAvailabilityDto.available();
     }
@@ -201,7 +127,74 @@ public class SubdomainService {
     }
 
     public void deleteSubdomainsByOwner(String uuid) {
-        List<SubdomainEntity> subdomains = subdomainRepository.findAllByOwner_Uuid(uuid);
-        subdomains.stream().forEach(subdomain -> deleteSubdomain(subdomain.getUuid()));
+        subdomainRepository.findAllByOwner_Uuid(uuid)
+                .forEach(subdomain -> deleteSubdomain(subdomain.getUuid()));
+    }
+
+    private String resolveLabel(SubdomainCreationDto dto, UserEntity owner) {
+        if (owner.getPlan() == Plan.PLUS && dto.getLabel() != null && !dto.getLabel().isBlank()) {
+            return dto.getLabel().toLowerCase(Locale.ROOT);
+        }
+        return generateUniqueLabel();
+    }
+
+    private String generateUniqueLabel() {
+        for (int i = 0; i < MAX_LABEL_ATTEMPTS; i++) {
+            String candidate = nameGenerator.generate();
+            boolean reserved = subdomainProperties.getReservedLabels().stream()
+                    .anyMatch(candidate::equalsIgnoreCase);
+            if (!reserved && subdomainRepository.findByLabelIgnoreCase(candidate).isEmpty()) {
+                return candidate;
+            }
+        }
+        throw new ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "No subdomain label available; pool of " + nameGenerator.poolSize() + " names is exhausted");
+    }
+
+    private void validateLabel(String label) {
+        if (subdomainProperties.getReservedLabels().stream().anyMatch(label::equalsIgnoreCase)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Label '" + label + "' is reserved");
+        }
+        if (subdomainRepository.findByLabelIgnoreCase(label).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Label '" + label + "' is already taken");
+        }
+    }
+
+    private SubdomainEntity syncToRoute53(SubdomainEntity entity, String targetIp, String verb, Object ownerUuid) {
+        String fqdn = fqdnOf(entity);
+        try {
+            route53Service.upsertARecord(fqdn, targetIp);
+            entity.setStatus(SubdomainStatus.ACTIVE);
+            log.info("{} subdomain {} -> {} for user {}", verb, fqdn, targetIp, ownerUuid);
+        } catch (Exception e) {
+            entity.setStatus(SubdomainStatus.FAILED);
+            log.error("Route53 upsert failed for {} -> {}: {}", fqdn, targetIp, e.getMessage(), e);
+        }
+        return subdomainRepository.save(entity);
+    }
+
+    private void deleteSubdomain(SubdomainEntity entity) {
+        String fqdn = fqdnOf(entity);
+        try {
+            route53Service.deleteARecord(fqdn, entity.getTargetIp());
+            subdomainRepository.delete(entity);
+            log.info("Deleted subdomain {}", fqdn);
+        } catch (Exception e) {
+            entity.setStatus(SubdomainStatus.FAILED);
+            subdomainRepository.save(entity);
+            log.error("Route53 delete failed for {}: {}", fqdn, e.getMessage(), e);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Failed to remove DNS record; subdomain marked FAILED and retained for retry");
+        }
+    }
+
+    private String fqdnOf(SubdomainEntity entity) {
+        if (entity.getFqdn() != null) {
+            return entity.getFqdn();
+        }
+        log.warn("Subdomain {} has no stored FQDN; falling back to current domain config", entity.getUuid());
+        return entity.getLabel() + "." + route53Properties.getDomain();
     }
 }

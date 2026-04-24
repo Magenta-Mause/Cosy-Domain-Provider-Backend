@@ -4,6 +4,7 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -60,6 +61,10 @@ public class UserService {
             user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
         }
         return userRepository.save(user);
+    }
+
+    public List<UserEntity> getAllUsers() {
+        return userRepository.findAll();
     }
 
     public UserEntity createUser(UserCreationDto dto) {

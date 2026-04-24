@@ -33,9 +33,10 @@ public class SubdomainController implements SubdomainApi {
     public ResponseEntity<List<SubdomainDto>> listMySubdomains() {
         UserEntity owner = securityContextService.getUser();
         String parentDomain = subdomainService.getParentDomain();
+        long defaultTtl = subdomainService.getDefaultTtl();
         List<SubdomainDto> dtos =
                 subdomainService.getSubdomainsForOwner(owner).stream()
-                        .map(s -> s.toDto(parentDomain))
+                        .map(s -> s.toDto(parentDomain, defaultTtl))
                         .toList();
         return ResponseEntity.ok(dtos);
     }
@@ -46,7 +47,7 @@ public class SubdomainController implements SubdomainApi {
         return ResponseEntity.ok(
                 subdomainService
                         .getOwnedSubdomain(uuid, owner)
-                        .toDto(subdomainService.getParentDomain()));
+                        .toDto(subdomainService.getParentDomain(), subdomainService.getDefaultTtl()));
     }
 
     @Override
@@ -66,7 +67,7 @@ public class SubdomainController implements SubdomainApi {
                 .body(
                         subdomainService
                                 .createSubdomain(creationDto, owner)
-                                .toDto(subdomainService.getParentDomain()));
+                                .toDto(subdomainService.getParentDomain(), subdomainService.getDefaultTtl()));
     }
 
     @Override
@@ -75,7 +76,7 @@ public class SubdomainController implements SubdomainApi {
         return ResponseEntity.ok(
                 subdomainService
                         .updateTargetIp(uuid, updateDto, owner)
-                        .toDto(subdomainService.getParentDomain()));
+                        .toDto(subdomainService.getParentDomain(), subdomainService.getDefaultTtl()));
     }
 
     @Override

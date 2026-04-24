@@ -1,6 +1,8 @@
 package com.magentamause.cosydomainprovider.model.core;
 
+import com.magentamause.cosydomainprovider.model.dns.DnsEntry;
 import java.time.Instant;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,4 +17,5 @@ public class SubdomainDto {
     private final SubdomainStatus status;
     private final Instant createdAt;
     private final Instant updatedAt;
+    private final List<DnsEntry> dnsEntries;
 }

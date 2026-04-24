@@ -135,6 +135,10 @@ public class SubdomainService {
         return route53Properties.getDomain();
     }
 
+    public long getDefaultTtl() {
+        return route53Properties.getDefaultTtl();
+    }
+
     public void deleteSubdomainsByOwner(String uuid) {
         subdomainRepository
                 .findAllByOwner_Uuid(uuid)

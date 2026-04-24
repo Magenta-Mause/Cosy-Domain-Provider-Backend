@@ -25,8 +25,7 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<List<UserDto>> getAllUsers() {
-        return ResponseEntity.ok(
-                userService.getAllUsers().stream().map(this::toDto).toList());
+        return ResponseEntity.ok(userService.getAllUsers().stream().map(this::toDto).toList());
     }
 
     @Override
@@ -50,8 +49,9 @@ public class UserController implements UserApi {
     }
 
     private UserDto toDto(UserEntity user) {
-        return user.toDto(user.computeMaxSubdomainCount(
-                subdomainProperties.getMaxPerFreeUser(),
-                subdomainProperties.getMaxPerPlusUser()));
+        return user.toDto(
+                user.computeMaxSubdomainCount(
+                        subdomainProperties.getMaxPerFreeUser(),
+                        subdomainProperties.getMaxPerPlusUser()));
     }
 }

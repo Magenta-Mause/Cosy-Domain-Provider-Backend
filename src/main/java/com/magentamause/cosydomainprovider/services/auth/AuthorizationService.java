@@ -50,9 +50,10 @@ public class AuthorizationService {
 
     public String generateIdentityToken(String userId) {
         UserEntity user = userService.getUserByUuid(userId);
-        int maxSubdomainCount = user.computeMaxSubdomainCount(
-                subdomainProperties.getMaxPerFreeUser(),
-                subdomainProperties.getMaxPerPlusUser());
+        int maxSubdomainCount =
+                user.computeMaxSubdomainCount(
+                        subdomainProperties.getMaxPerFreeUser(),
+                        subdomainProperties.getMaxPerPlusUser());
         return jwtUtils.generateToken(JwtTokenBody.forIdentityToken(user, maxSubdomainCount));
     }
 

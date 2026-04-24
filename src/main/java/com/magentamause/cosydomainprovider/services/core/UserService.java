@@ -1,6 +1,8 @@
 package com.magentamause.cosydomainprovider.services.core;
 
+import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
@@ -19,6 +21,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final SubdomainService subdomainService;
+    private final SubdomainProperties subdomainProperties;
 
     public Optional<UserEntity> getOptionalUserByUuid(String uuid) {
         return userRepository.findById(uuid);
@@ -89,5 +92,33 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(plainPassword));
         user.setNeedsPasswordSetup(false);
         userRepository.save(user);
+    }
+
+    public int computeMaxSubdomainCount(UserEntity user) {
+        return user.computeMaxSubdomainCount(
+                subdomainProperties.getMaxPerFreeUser(), subdomainProperties.getMaxPerPlusUser());
+    }
+
+    public UserEntity adminUpdateUser(String uuid, AdminUserUpdateDto dto) {
+        UserEntity user = getUserByUuid(uuid);
+        if (dto.getUsername() != null) {
+            user.setUsername(dto.getUsername());
+        }
+        if (dto.getEmail() != null) {
+            boolean takenByOther =
+                    userRepository.existsByEmailIgnoreCase(dto.getEmail())
+                            && !dto.getEmail().equalsIgnoreCase(user.getEmail());
+            if (takenByOther) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            }
+            user.setEmail(dto.getEmail());
+        }
+        return userRepository.save(user);
+    }
+
+    public UserEntity adminSetMaxSubdomainOverride(String uuid, Integer value) {
+        UserEntity user = getUserByUuid(uuid);
+        user.setMaxSubdomainCountOverride(value);
+        return userRepository.save(user);
     }
 }

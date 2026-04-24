@@ -47,7 +47,9 @@ public class SubdomainController implements SubdomainApi {
         return ResponseEntity.ok(
                 subdomainService
                         .getOwnedSubdomain(uuid, owner)
-                        .toDto(subdomainService.getParentDomain(), subdomainService.getDefaultTtl()));
+                        .toDto(
+                                subdomainService.getParentDomain(),
+                                subdomainService.getDefaultTtl()));
     }
 
     @Override
@@ -67,7 +69,9 @@ public class SubdomainController implements SubdomainApi {
                 .body(
                         subdomainService
                                 .createSubdomain(creationDto, owner)
-                                .toDto(subdomainService.getParentDomain(), subdomainService.getDefaultTtl()));
+                                .toDto(
+                                        subdomainService.getParentDomain(),
+                                        subdomainService.getDefaultTtl()));
     }
 
     @Override
@@ -76,7 +80,9 @@ public class SubdomainController implements SubdomainApi {
         return ResponseEntity.ok(
                 subdomainService
                         .updateTargetIp(uuid, updateDto, owner)
-                        .toDto(subdomainService.getParentDomain(), subdomainService.getDefaultTtl()));
+                        .toDto(
+                                subdomainService.getParentDomain(),
+                                subdomainService.getDefaultTtl()));
     }
 
     @Override

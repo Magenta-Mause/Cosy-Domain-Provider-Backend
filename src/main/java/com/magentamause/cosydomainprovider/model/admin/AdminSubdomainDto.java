@@ -2,10 +2,9 @@ package com.magentamause.cosydomainprovider.model.admin;
 
 import com.magentamause.cosydomainprovider.model.core.LabelMode;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.Instant;
 
 @Data
 @Builder

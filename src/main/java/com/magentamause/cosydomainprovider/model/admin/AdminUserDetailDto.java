@@ -1,11 +1,10 @@
 package com.magentamause.cosydomainprovider.model.admin;
 
 import com.magentamause.cosydomainprovider.model.core.Plan;
-import lombok.Builder;
-import lombok.Data;
-
 import java.time.Instant;
 import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder

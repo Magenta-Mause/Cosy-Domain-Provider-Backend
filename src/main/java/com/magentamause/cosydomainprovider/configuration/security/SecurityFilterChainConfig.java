@@ -30,10 +30,10 @@ public class SecurityFilterChainConfig {
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
                                                 "/api/v1/admin/**",
-                                                "/v3/api-docs/**",
+                                                "/api/v3/api-docs/**",
                                                 "/api/v1/stripe-events",
                                                 "/actuator/**",
-                                                "/swagger-ui/**")
+                                                "/api/swagger-ui/**")
                                         .permitAll()
                                         .dispatcherTypeMatchers(DispatcherType.ASYNC)
                                         .permitAll()

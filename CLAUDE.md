@@ -2,6 +2,10 @@
 
 Spring Boot REST API for managing `cosy-hosting.net` subdomains. Frontend: `../cosy-domain-provider-frontend`.
 
+## Cross-repo work
+
+If a task touches the frontend (wiring new endpoints into the UI, understanding component conventions, or changing the Orval-generated API client), **read `../cosy-domain-provider-frontend/CLAUDE.md` before starting.** It documents the component structure, styling rules, i18n requirements, and admin API client patterns that must be followed on the frontend side.
+
 ## Commands
 
 ```bash
@@ -78,4 +82,22 @@ public class FooController implements FooApi {
 
 - **`model/action/`** — input DTOs (request bodies, form params). Carry Bean Validation annotations.
 - **`model/core/`** — output DTOs. Typically built with `@Builder`.
+- **`model/admin/`** — admin-specific response DTOs (e.g. `AdminSubdomainDto`, `AdminUserDto`). Separate from `model/core/` because they include fields that should never be exposed to regular users (owner info, internal counts, etc.).
 - Never expose entities directly in responses — always map to a DTO.
+
+### Layer boundaries: controllers call services, not repositories
+
+Controllers must only inject services (and configuration properties like `AdminProperties`). Repository calls belong exclusively in the service layer. A controller that bypasses a service to call a repository directly is a pattern to reject — it leaks data-access logic into the wrong layer.
+
+```
+Controller → Service → Repository   ✓
+Controller → Repository             ✗
+```
+
+### Admin service methods
+
+Service methods that bypass user ownership checks are prefixed with `admin` (e.g. `adminGetSubdomain`, `adminUpdateTargetIp`, `adminRelabelSubdomain`). This makes it immediately visible at the call site that the method skips the owner guard, and keeps the admin surface searchable.
+
+### 404 instead of 403 for ownership failures
+
+`getOwnedSubdomain` (and similar ownership checks) throws `404 NOT_FOUND` rather than `403 FORBIDDEN` when a user tries to access a resource they don't own. This avoids leaking whether the resource exists at all. Keep this consistent for any future ownership-guarded lookup.

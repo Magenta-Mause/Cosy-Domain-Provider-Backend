@@ -63,18 +63,18 @@ public class SubdomainService {
                     HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
         }
 
-        boolean useCustomLabel = owner.getPlan() == Plan.PLUS
-                && dto.getLabel() != null && !dto.getLabel().isBlank();
-        String label = useCustomLabel
-                ? dto.getLabel().toLowerCase(Locale.ROOT)
-                : generateUniqueLabel();
+        boolean useCustomLabel =
+                owner.getPlan() == Plan.PLUS && dto.getLabel() != null && !dto.getLabel().isBlank();
+        String label =
+                useCustomLabel ? dto.getLabel().toLowerCase(Locale.ROOT) : generateUniqueLabel();
         LabelMode labelMode = useCustomLabel ? LabelMode.CUSTOM : LabelMode.RANDOM;
         validateLabel(label);
 
         long ownedCount = subdomainRepository.countByOwner(owner);
-        int limit = owner.computeMaxSubdomainCount(
-                subdomainProperties.getMaxPerFreeUser(),
-                subdomainProperties.getMaxPerPlusUser());
+        int limit =
+                owner.computeMaxSubdomainCount(
+                        subdomainProperties.getMaxPerFreeUser(),
+                        subdomainProperties.getMaxPerPlusUser());
         if (ownedCount >= limit) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Subdomain quota reached (" + limit + " per user)");
@@ -143,6 +143,97 @@ public class SubdomainService {
 
     public long getDefaultTtl() {
         return route53Properties.getDefaultTtl();
+    }
+
+    public List<SubdomainEntity> adminGetAllSubdomains() {
+        return subdomainRepository.findAll();
+    }
+
+    public SubdomainEntity adminGetSubdomain(String uuid) {
+        return subdomainRepository
+                .findById(uuid)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Subdomain " + uuid + " not found"));
+    }
+
+    public long getCountByOwner(UserEntity owner) {
+        return subdomainRepository.countByOwner(owner);
+    }
+
+    public SubdomainEntity adminUpdateTargetIp(String uuid, SubdomainUpdateDto dto) {
+        SubdomainEntity entity =
+                subdomainRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Subdomain " + uuid + " not found"));
+        entity.setTargetIp(dto.getTargetIp());
+        entity.setTargetIpv6(dto.getTargetIpv6());
+        entity.setStatus(SubdomainStatus.PENDING);
+        entity = subdomainRepository.save(entity);
+        entity = syncARecordIfPresent(entity, dto.getTargetIp(), "Updated", "admin");
+        entity = syncAAAARecordIfPresent(entity, dto.getTargetIpv6(), "Updated", "admin");
+        return entity;
+    }
+
+    public SubdomainEntity adminRelabelSubdomain(String uuid, String newLabel) {
+        SubdomainEntity entity =
+                subdomainRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Subdomain " + uuid + " not found"));
+        String normalized = newLabel.toLowerCase(Locale.ROOT);
+        if (normalized.equalsIgnoreCase(entity.getLabel())) {
+            return entity;
+        }
+        if (subdomainProperties.getReservedLabels().stream()
+                .anyMatch(normalized::equalsIgnoreCase)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Label '" + normalized + "' is reserved");
+        }
+        subdomainRepository
+                .findByLabelIgnoreCase(normalized)
+                .filter(existing -> !existing.getUuid().equals(uuid))
+                .ifPresent(
+                        existing -> {
+                            throw new ResponseStatusException(
+                                    HttpStatus.CONFLICT,
+                                    "Label '" + normalized + "' is already taken");
+                        });
+
+        String oldFqdn = fqdnOf(entity);
+        try {
+            if (entity.getTargetIp() != null && !entity.getTargetIp().isBlank()) {
+                route53Service.deleteARecord(oldFqdn, entity.getTargetIp());
+            }
+            if (entity.getTargetIpv6() != null && !entity.getTargetIpv6().isBlank()) {
+                route53Service.deleteAAAARecord(oldFqdn, entity.getTargetIpv6());
+            }
+        } catch (Exception e) {
+            log.error(
+                    "Route53 delete failed for old FQDN {} during relabel: {}",
+                    oldFqdn,
+                    e.getMessage(),
+                    e);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "Failed to remove old DNS records; relabel aborted");
+        }
+
+        String newFqdn = normalized + "." + route53Properties.getDomain();
+        entity.setLabel(normalized);
+        entity.setFqdn(newFqdn);
+        entity.setStatus(SubdomainStatus.PENDING);
+        entity = subdomainRepository.save(entity);
+        entity = syncARecordIfPresent(entity, entity.getTargetIp(), "Relabeled", "admin");
+        entity = syncAAAARecordIfPresent(entity, entity.getTargetIpv6(), "Relabeled", "admin");
+        return entity;
     }
 
     public void deleteSubdomainsByOwner(String uuid) {

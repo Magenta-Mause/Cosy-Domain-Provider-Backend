@@ -32,6 +32,7 @@ public interface OAuthApi {
                     String provider);
 
     @Operation(
+            operationId = "oauthCallback",
             summary = "Handle OAuth2 callback",
             description =
                     "Exchanges the authorization code for a token, resolves or creates the local user, and sets the refresh token cookie. Redirects to the frontend on success or failure.")

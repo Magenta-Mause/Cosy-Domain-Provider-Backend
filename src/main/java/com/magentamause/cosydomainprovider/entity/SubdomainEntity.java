@@ -1,5 +1,6 @@
 package com.magentamause.cosydomainprovider.entity;
 
+import com.magentamause.cosydomainprovider.model.core.LabelMode;
 import com.magentamause.cosydomainprovider.model.core.SubdomainDto;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.model.dns.DnsEntry;
@@ -54,6 +55,11 @@ public class SubdomainEntity {
     @Column(nullable = false)
     private SubdomainStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private LabelMode labelMode = LabelMode.RANDOM;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -78,6 +84,7 @@ public class SubdomainEntity {
                 .targetIp(targetIp)
                 .targetIpv6(targetIpv6)
                 .status(status)
+                .labelMode(labelMode)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
                 .dnsEntries(entries)

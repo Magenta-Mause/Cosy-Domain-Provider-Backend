@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.time.Instant;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Getter
 @Setter
@@ -49,6 +50,10 @@ public class UserEntity {
 
     @Column(nullable = true)
     private Integer maxSubdomainCountOverride;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
 
     public int computeMaxSubdomainCount(int maxFree, int maxPlus) {
         if (maxSubdomainCountOverride != null) return maxSubdomainCountOverride;

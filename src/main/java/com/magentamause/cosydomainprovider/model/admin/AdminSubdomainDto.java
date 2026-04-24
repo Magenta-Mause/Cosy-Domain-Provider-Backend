@@ -1,14 +1,15 @@
-package com.magentamause.cosydomainprovider.model.core;
+package com.magentamause.cosydomainprovider.model.admin;
 
-import com.magentamause.cosydomainprovider.model.dns.DnsEntry;
-import java.time.Instant;
-import java.util.List;
+import com.magentamause.cosydomainprovider.model.core.LabelMode;
+import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Instant;
+
 @Data
 @Builder
-public class SubdomainDto {
+public class AdminSubdomainDto {
     private final String uuid;
     private final String label;
     private final String fqdn;
@@ -16,7 +17,9 @@ public class SubdomainDto {
     private final String targetIpv6;
     private final SubdomainStatus status;
     private final LabelMode labelMode;
+    private final String ownerUuid;
+    private final String ownerUsername;
+    private final String ownerEmail;
     private final Instant createdAt;
     private final Instant updatedAt;
-    private final List<DnsEntry> dnsEntries;
 }

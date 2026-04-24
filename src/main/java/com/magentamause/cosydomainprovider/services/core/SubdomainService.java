@@ -7,6 +7,7 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.SubdomainCreationDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
 import com.magentamause.cosydomainprovider.model.core.LabelAvailabilityDto;
+import com.magentamause.cosydomainprovider.model.core.LabelMode;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
@@ -62,7 +63,12 @@ public class SubdomainService {
                     HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
         }
 
-        String label = resolveLabel(dto, owner);
+        boolean useCustomLabel = owner.getPlan() == Plan.PLUS
+                && dto.getLabel() != null && !dto.getLabel().isBlank();
+        String label = useCustomLabel
+                ? dto.getLabel().toLowerCase(Locale.ROOT)
+                : generateUniqueLabel();
+        LabelMode labelMode = useCustomLabel ? LabelMode.CUSTOM : LabelMode.RANDOM;
         validateLabel(label);
 
         long ownedCount = subdomainRepository.countByOwner(owner);
@@ -83,6 +89,7 @@ public class SubdomainService {
                         .targetIp(dto.getTargetIp())
                         .targetIpv6(dto.getTargetIpv6())
                         .status(SubdomainStatus.PENDING)
+                        .labelMode(labelMode)
                         .build();
         entity = subdomainRepository.save(entity);
         entity = syncARecordIfPresent(entity, dto.getTargetIp(), "Created", owner.getUuid());
@@ -142,13 +149,6 @@ public class SubdomainService {
         subdomainRepository
                 .findAllByOwner_Uuid(uuid)
                 .forEach(subdomain -> deleteSubdomain(subdomain.getUuid()));
-    }
-
-    private String resolveLabel(SubdomainCreationDto dto, UserEntity owner) {
-        if (owner.getPlan() == Plan.PLUS && dto.getLabel() != null && !dto.getLabel().isBlank()) {
-            return dto.getLabel().toLowerCase(Locale.ROOT);
-        }
-        return generateUniqueLabel();
     }
 
     private String generateUniqueLabel() {

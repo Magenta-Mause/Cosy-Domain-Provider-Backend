@@ -44,6 +44,9 @@ public class SubdomainEntity {
     @Column(nullable = false)
     private String targetIp;
 
+    @Column(nullable = true)
+    private String targetIpv6;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubdomainStatus status;
@@ -62,6 +65,7 @@ public class SubdomainEntity {
                 .label(label)
                 .fqdn(fqdn != null ? fqdn : label + "." + parentDomain)
                 .targetIp(targetIp)
+                .targetIpv6(targetIpv6)
                 .status(status)
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)

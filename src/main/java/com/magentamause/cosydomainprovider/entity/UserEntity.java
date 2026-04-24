@@ -9,9 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.*;
-
 import java.time.Instant;
+import lombok.*;
 
 @Getter
 @Setter
@@ -29,11 +28,13 @@ public class UserEntity {
 
     @Column(unique = true, nullable = false)
     private String email;
+
     private String passwordHash;
 
     private String accessToken;
     private Instant accessTokenExpiresAt;
     private boolean isVerified;
+    private boolean needsPasswordSetup;
 
     private String passwordResetToken;
     private Instant passwordResetExpiresAt;
@@ -47,6 +48,13 @@ public class UserEntity {
     private String stripeCustomerId;
 
     public UserDto toDto() {
-        return UserDto.builder().uuid(uuid).username(username).email(email).isVerified(isVerified).plan(plan).build();
+        return UserDto.builder()
+                .uuid(uuid)
+                .username(username)
+                .email(email)
+                .isVerified(isVerified)
+                .needsPasswordSetup(needsPasswordSetup)
+                .plan(plan)
+                .build();
     }
 }

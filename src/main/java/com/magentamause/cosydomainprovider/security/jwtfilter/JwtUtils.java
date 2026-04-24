@@ -32,7 +32,10 @@ public class JwtUtils {
     }
 
     public String generateToken(JwtTokenBody body) {
-        return createToken(body.toClaimsMap(), body.getUserId(), getTokenValidityDuration(body.getTokenType()));
+        return createToken(
+                body.toClaimsMap(),
+                body.getUserId(),
+                getTokenValidityDuration(body.getTokenType()));
     }
 
     private String createToken(Map<String, Object> claims, String subject, long expirationTime) {

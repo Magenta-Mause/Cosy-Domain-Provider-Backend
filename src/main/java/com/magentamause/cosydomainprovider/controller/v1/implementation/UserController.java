@@ -8,6 +8,7 @@ import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +20,12 @@ public class UserController implements UserApi {
     private final UserService userService;
     private final UserVerificationService userVerificationService;
     private final SecurityContextService securityContextService;
+
+    @Override
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        return ResponseEntity.ok(
+                userService.getAllUsers().stream().map(UserEntity::toDto).toList());
+    }
 
     @Override
     public ResponseEntity<UserDto> createUser(UserCreationDto userCreationDto) {

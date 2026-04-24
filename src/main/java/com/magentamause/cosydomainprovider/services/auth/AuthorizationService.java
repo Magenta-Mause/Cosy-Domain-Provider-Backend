@@ -26,7 +26,8 @@ public class AuthorizationService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
-        if (!passwordEncoder.matches(plainPassword, user.getPasswordHash())) {
+        if (user.getPasswordHash() == null
+                || !passwordEncoder.matches(plainPassword, user.getPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
         return generateRefreshToken(user.getUuid());

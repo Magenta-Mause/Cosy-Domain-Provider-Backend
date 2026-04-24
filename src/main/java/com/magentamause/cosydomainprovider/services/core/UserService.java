@@ -4,13 +4,13 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,13 +26,21 @@ public class UserService {
 
     public UserEntity getUserByUuid(String uuid) {
         return getOptionalUserByUuid(uuid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id " + uuid + " not found"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "User with id " + uuid + " not found"));
     }
 
     public UserEntity getUserByEmail(String email) {
         return userRepository
                 .findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with email " + email + " not found"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "User with email " + email + " not found"));
     }
 
     public void deleteUserByUuid(String uuid) {
@@ -45,24 +53,41 @@ public class UserService {
             user.setUsername(dto.getNewUsername());
         }
         if (dto.getNewPassword() != null) {
-            if (dto.getCurrentPassword() == null ||
-                    !passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
+            if (dto.getCurrentPassword() == null
+                    || !passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Current password is incorrect");
             }
             user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
         }
         return userRepository.save(user);
     }
 
+    public List<UserEntity> getAllUsers() {
+        return userRepository.findAll();
+    }
+
     public UserEntity createUser(UserCreationDto dto) {
         if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
-        UserEntity user = UserEntity.builder()
-                .username(dto.getUsername())
-                .email(dto.getEmail())
-                .passwordHash(passwordEncoder.encode(dto.getPassword()))
-                .build();
+        UserEntity user =
+                UserEntity.builder()
+                        .username(dto.getUsername())
+                        .email(dto.getEmail())
+                        .passwordHash(passwordEncoder.encode(dto.getPassword()))
+                        .build();
         return userRepository.save(user);
+    }
+
+    public void setPassword(String uuid, String plainPassword) {
+        UserEntity user = getUserByUuid(uuid);
+        if (!user.isNeedsPasswordSetup() || user.getPasswordHash() != null) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Password has already been set for this account");
+        }
+        user.setPasswordHash(passwordEncoder.encode(plainPassword));
+        user.setNeedsPasswordSetup(false);
+        userRepository.save(user);
     }
 }

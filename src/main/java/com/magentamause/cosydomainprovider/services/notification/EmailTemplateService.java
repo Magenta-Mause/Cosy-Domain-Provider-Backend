@@ -9,7 +9,8 @@ import org.thymeleaf.context.Context;
 @RequiredArgsConstructor
 public class EmailTemplateService {
 
-    private static final String DASH_SPAN = "<span style=\"user-select:none;-webkit-user-select:none;\">-</span>";
+    private static final String DASH_SPAN =
+            "<span style=\"user-select:none;-webkit-user-select:none;\">-</span>";
 
     private final TemplateEngine templateEngine;
 

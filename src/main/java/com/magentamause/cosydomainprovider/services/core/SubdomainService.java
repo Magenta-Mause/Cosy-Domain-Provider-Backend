@@ -11,14 +11,13 @@ import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
+import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.Locale;
 
 /**
  * TODO: add a DuckDNS-style dynamic update endpoint (GET /update?label=...&token=...&ip=...) using
@@ -59,20 +58,21 @@ public class SubdomainService {
 
     public SubdomainEntity createSubdomain(SubdomainCreationDto dto, UserEntity owner) {
         if (!owner.isVerified()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "User must be verified to create subdomains");
         }
 
         String label = resolveLabel(dto, owner);
         validateLabel(label);
 
         long ownedCount = subdomainRepository.countByOwner(owner);
-        int limit = owner.getPlan() == Plan.PLUS
-                ? subdomainProperties.getMaxPerPlusUser()
-                : subdomainProperties.getMaxPerFreeUser();
+        int limit =
+                owner.getPlan() == Plan.PLUS
+                        ? subdomainProperties.getMaxPerPlusUser()
+                        : subdomainProperties.getMaxPerFreeUser();
         if (ownedCount >= limit) {
             throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Subdomain quota reached (" + limit + " per user)");
+                    HttpStatus.FORBIDDEN, "Subdomain quota reached (" + limit + " per user)");
         }
 
         String fqdn = label + "." + route53Properties.getDomain();
@@ -106,8 +106,11 @@ public class SubdomainService {
         SubdomainEntity entity =
                 subdomainRepository
                         .findById(uuid)
-                        .orElseThrow(() -> new ResponseStatusException(
-                                HttpStatus.NOT_FOUND, "Subdomain " + uuid + " not found"));
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Subdomain " + uuid + " not found"));
         deleteSubdomain(entity);
     }
 
@@ -133,7 +136,8 @@ public class SubdomainService {
     }
 
     public void deleteSubdomainsByOwner(String uuid) {
-        subdomainRepository.findAllByOwner_Uuid(uuid)
+        subdomainRepository
+                .findAllByOwner_Uuid(uuid)
                 .forEach(subdomain -> deleteSubdomain(subdomain.getUuid()));
     }
 
@@ -147,27 +151,33 @@ public class SubdomainService {
     private String generateUniqueLabel() {
         for (int i = 0; i < MAX_LABEL_ATTEMPTS; i++) {
             String candidate = nameGenerator.generate();
-            boolean reserved = subdomainProperties.getReservedLabels().stream()
-                    .anyMatch(candidate::equalsIgnoreCase);
+            boolean reserved =
+                    subdomainProperties.getReservedLabels().stream()
+                            .anyMatch(candidate::equalsIgnoreCase);
             if (!reserved && subdomainRepository.findByLabelIgnoreCase(candidate).isEmpty()) {
                 return candidate;
             }
         }
         throw new ResponseStatusException(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "No subdomain label available; pool of " + nameGenerator.poolSize() + " names is exhausted");
+                "No subdomain label available; pool of "
+                        + nameGenerator.poolSize()
+                        + " names is exhausted");
     }
 
     private void validateLabel(String label) {
         if (subdomainProperties.getReservedLabels().stream().anyMatch(label::equalsIgnoreCase)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Label '" + label + "' is reserved");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Label '" + label + "' is reserved");
         }
         if (subdomainRepository.findByLabelIgnoreCase(label).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Label '" + label + "' is already taken");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Label '" + label + "' is already taken");
         }
     }
 
-    private SubdomainEntity syncARecordIfPresent(SubdomainEntity entity, String targetIp, String verb, Object ownerUuid) {
+    private SubdomainEntity syncARecordIfPresent(
+            SubdomainEntity entity, String targetIp, String verb, Object ownerUuid) {
         if (targetIp == null || targetIp.isBlank()) return entity;
         String fqdn = fqdnOf(entity);
         try {
@@ -176,12 +186,14 @@ public class SubdomainService {
             log.info("{} A record {} -> {} for user {}", verb, fqdn, targetIp, ownerUuid);
         } catch (Exception e) {
             entity.setStatus(SubdomainStatus.FAILED);
-            log.error("Route53 A upsert failed for {} -> {}: {}", fqdn, targetIp, e.getMessage(), e);
+            log.error(
+                    "Route53 A upsert failed for {} -> {}: {}", fqdn, targetIp, e.getMessage(), e);
         }
         return subdomainRepository.save(entity);
     }
 
-    private SubdomainEntity syncAAAARecordIfPresent(SubdomainEntity entity, String targetIpv6, String verb, Object ownerUuid) {
+    private SubdomainEntity syncAAAARecordIfPresent(
+            SubdomainEntity entity, String targetIpv6, String verb, Object ownerUuid) {
         if (targetIpv6 == null || targetIpv6.isBlank()) return entity;
         String fqdn = fqdnOf(entity);
         try {
@@ -190,7 +202,12 @@ public class SubdomainService {
             log.info("{} AAAA record {} -> {} for user {}", verb, fqdn, targetIpv6, ownerUuid);
         } catch (Exception e) {
             entity.setStatus(SubdomainStatus.FAILED);
-            log.error("Route53 AAAA upsert failed for {} -> {}: {}", fqdn, targetIpv6, e.getMessage(), e);
+            log.error(
+                    "Route53 AAAA upsert failed for {} -> {}: {}",
+                    fqdn,
+                    targetIpv6,
+                    e.getMessage(),
+                    e);
         }
         return subdomainRepository.save(entity);
     }
@@ -220,7 +237,9 @@ public class SubdomainService {
         if (entity.getFqdn() != null) {
             return entity.getFqdn();
         }
-        log.warn("Subdomain {} has no stored FQDN; falling back to current domain config", entity.getUuid());
+        log.warn(
+                "Subdomain {} has no stored FQDN; falling back to current domain config",
+                entity.getUuid());
         return entity.getLabel() + "." + route53Properties.getDomain();
     }
 }

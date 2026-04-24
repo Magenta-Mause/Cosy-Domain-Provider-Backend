@@ -3,16 +3,15 @@ package com.magentamause.cosydomainprovider.services.core;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
 import com.magentamause.cosydomainprovider.services.notification.MessagingService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -33,8 +32,14 @@ public class UserVerificationService {
     }
 
     public void resendVerificationCode(String uuid) {
-        UserEntity user = userRepository.findById(uuid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id " + uuid + " not found"));
+        UserEntity user =
+                userRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "User with id " + uuid + " not found"));
         if (user.isVerified()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User is already verified");
         }
@@ -45,10 +50,18 @@ public class UserVerificationService {
     }
 
     public void verifyUser(String uuid, String accessToken) {
-        UserEntity user = userRepository.findById(uuid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id " + uuid + " not found"));
-        if (user.getAccessTokenExpiresAt() == null || Instant.now().isAfter(user.getAccessTokenExpiresAt())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code has expired");
+        UserEntity user =
+                userRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "User with id " + uuid + " not found"));
+        if (user.getAccessTokenExpiresAt() == null
+                || Instant.now().isAfter(user.getAccessTokenExpiresAt())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Verification code has expired");
         }
         if (!user.getAccessToken().equalsIgnoreCase(accessToken.replace("-", ""))) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
@@ -59,7 +72,12 @@ public class UserVerificationService {
 
     private static String generateAccessToken() {
         return IntStream.range(0, ACCESS_TOKEN_LENGTH)
-                .mapToObj(i -> String.valueOf(ACCESS_TOKEN_LETTERS.charAt(SECURE_RANDOM.nextInt(ACCESS_TOKEN_LETTERS.length()))))
+                .mapToObj(
+                        i ->
+                                String.valueOf(
+                                        ACCESS_TOKEN_LETTERS.charAt(
+                                                SECURE_RANDOM.nextInt(
+                                                        ACCESS_TOKEN_LETTERS.length()))))
                 .collect(Collectors.joining());
     }
 }

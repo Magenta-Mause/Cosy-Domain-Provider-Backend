@@ -14,7 +14,8 @@ public class MailApiClient {
     private final MailApiClientProperties mailApiClientProperties;
     private final WebClient webClient;
 
-    public MailApiClient(MailApiClientProperties mailApiClientProperties, WebClient.Builder webClientBuilder) {
+    public MailApiClient(
+            MailApiClientProperties mailApiClientProperties, WebClient.Builder webClientBuilder) {
         webClientBuilder.baseUrl(mailApiClientProperties.url());
         this.mailApiClientProperties = mailApiClientProperties;
         this.webClient = webClientBuilder.build();

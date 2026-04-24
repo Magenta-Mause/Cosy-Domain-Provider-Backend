@@ -26,7 +26,7 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<List<UserDto>> getAllUsers() {
         return ResponseEntity.ok(
-                userService.getAllUsers().stream().map(UserEntity::toDto).toList());
+                userService.getAllUsers().stream().map(this::toDto).toList());
     }
 
     @Override

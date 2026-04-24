@@ -73,6 +73,14 @@ oauth:
 admin:
   secret-key: ${ADMIN_SECRET_KEY:change-me-in-prod}
 
+rate-limit:
+  auth:
+    requests: 10
+    period-seconds: 60
+  global:
+    requests: 60
+    period-seconds: 60
+
 subdomain:
   max-per-free-user: 1
   max-per-plus-user: 5

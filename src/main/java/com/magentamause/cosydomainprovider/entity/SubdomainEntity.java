@@ -34,6 +34,9 @@ public class SubdomainEntity {
     @Column(unique = true, nullable = false)
     private String label;
 
+    @Column(nullable = true)
+    private String fqdn;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "owner_uuid", nullable = false)
     private UserEntity owner;
@@ -57,7 +60,7 @@ public class SubdomainEntity {
         return SubdomainDto.builder()
                 .uuid(uuid)
                 .label(label)
-                .fqdn(label + "." + parentDomain)
+                .fqdn(fqdn != null ? fqdn : label + "." + parentDomain)
                 .targetIp(targetIp)
                 .status(status)
                 .createdAt(createdAt)

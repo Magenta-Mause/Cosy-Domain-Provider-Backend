@@ -21,14 +21,12 @@ public class Route53Service {
         this.props = props;
     }
 
-    public String upsertARecord(String subdomain, String ip) {
-        String fullName = subdomain + "." + props.getDomain();
-        return submitChange(ChangeAction.UPSERT, fullName, ip);
+    public String upsertARecord(String fqdn, String ip) {
+        return submitChange(ChangeAction.UPSERT, fqdn, ip);
     }
 
-    public String deleteARecord(String subdomain, String ip) {
-        String fullName = subdomain + "." + props.getDomain();
-        return submitChange(ChangeAction.DELETE, fullName, ip);
+    public String deleteARecord(String fqdn, String ip) {
+        return submitChange(ChangeAction.DELETE, fqdn, ip);
     }
 
     /**

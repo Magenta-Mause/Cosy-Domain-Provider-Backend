@@ -47,14 +47,23 @@ public class UserEntity {
     private Instant planExpiresAt;
     private String stripeCustomerId;
 
-    public UserDto toDto() {
+    @Column(nullable = true)
+    private Integer maxSubdomainCountOverride;
+
+    public int computeMaxSubdomainCount(int maxFree, int maxPlus) {
+        if (maxSubdomainCountOverride != null) return maxSubdomainCountOverride;
+        return plan == Plan.PLUS ? maxPlus : maxFree;
+    }
+
+    public UserDto toDto(int maxSubdomainCount) {
         return UserDto.builder()
                 .uuid(uuid)
                 .username(username)
                 .email(email)
                 .isVerified(isVerified)
                 .needsPasswordSetup(needsPasswordSetup)
-                .plan(plan)
+                .tier(plan)
+                .maxSubdomainCount(maxSubdomainCount)
                 .build();
     }
 }

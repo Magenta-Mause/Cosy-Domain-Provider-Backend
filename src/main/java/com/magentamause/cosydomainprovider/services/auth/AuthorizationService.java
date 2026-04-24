@@ -1,5 +1,6 @@
 package com.magentamause.cosydomainprovider.services.auth;
 
+import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
@@ -18,6 +19,7 @@ public class AuthorizationService {
     private final JwtUtils jwtUtils;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final SubdomainProperties subdomainProperties;
 
     public String loginUser(String email, String plainPassword) {
         UserEntity user;
@@ -48,7 +50,10 @@ public class AuthorizationService {
 
     public String generateIdentityToken(String userId) {
         UserEntity user = userService.getUserByUuid(userId);
-        return jwtUtils.generateToken(JwtTokenBody.forIdentityToken(user));
+        int maxSubdomainCount = user.computeMaxSubdomainCount(
+                subdomainProperties.getMaxPerFreeUser(),
+                subdomainProperties.getMaxPerPlusUser());
+        return jwtUtils.generateToken(JwtTokenBody.forIdentityToken(user, maxSubdomainCount));
     }
 
     public String generateRefreshToken(String userId) {

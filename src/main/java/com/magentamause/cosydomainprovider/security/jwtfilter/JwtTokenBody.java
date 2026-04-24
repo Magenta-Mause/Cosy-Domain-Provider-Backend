@@ -15,7 +15,8 @@ public class JwtTokenBody {
     private String email;
     private boolean isVerified;
     private boolean needsPasswordSetup;
-    private Plan plan;
+    private Plan tier;
+    private int maxSubdomainCount;
     private TokenType tokenType;
 
     public enum TokenType {
@@ -31,7 +32,7 @@ public class JwtTokenBody {
                 .build();
     }
 
-    public static JwtTokenBody forIdentityToken(UserEntity user) {
+    public static JwtTokenBody forIdentityToken(UserEntity user, int maxSubdomainCount) {
         return JwtTokenBody.builder()
                 .tokenType(TokenType.IDENTITY_TOKEN)
                 .userId(user.getUuid())
@@ -39,7 +40,8 @@ public class JwtTokenBody {
                 .email(user.getEmail())
                 .isVerified(user.isVerified())
                 .needsPasswordSetup(user.isNeedsPasswordSetup())
-                .plan(user.getPlan())
+                .tier(user.getPlan())
+                .maxSubdomainCount(maxSubdomainCount)
                 .build();
     }
 
@@ -52,7 +54,8 @@ public class JwtTokenBody {
         if (tokenType == TokenType.IDENTITY_TOKEN) {
             map.put("isVerified", isVerified);
             map.put("needsPasswordSetup", needsPasswordSetup);
-            if (plan != null) map.put("plan", plan.name());
+            if (tier != null) map.put("tier", tier.name());
+            map.put("maxSubdomainCount", maxSubdomainCount);
         }
         return map;
     }

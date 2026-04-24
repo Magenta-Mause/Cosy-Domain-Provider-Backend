@@ -11,5 +11,6 @@ public class UserDto {
     private final String email;
     private final boolean isVerified;
     private final boolean needsPasswordSetup;
-    private final Plan plan;
+    private final Plan tier;
+    private final int maxSubdomainCount;
 }

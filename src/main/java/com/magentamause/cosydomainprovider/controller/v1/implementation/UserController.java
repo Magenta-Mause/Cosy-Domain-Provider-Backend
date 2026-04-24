@@ -1,5 +1,6 @@
 package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
+import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.controller.v1.schema.UserApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
@@ -20,6 +21,7 @@ public class UserController implements UserApi {
     private final UserService userService;
     private final UserVerificationService userVerificationService;
     private final SecurityContextService securityContextService;
+    private final SubdomainProperties subdomainProperties;
 
     @Override
     public ResponseEntity<List<UserDto>> getAllUsers() {
@@ -31,13 +33,13 @@ public class UserController implements UserApi {
     public ResponseEntity<UserDto> createUser(UserCreationDto userCreationDto) {
         UserEntity user = userService.createUser(userCreationDto);
         userVerificationService.sendInitialVerification(user);
-        return ResponseEntity.ok(user.toDto());
+        return ResponseEntity.ok(toDto(user));
     }
 
     @Override
     public ResponseEntity<UserDto> updateUser(UpdateUserDto dto) {
         UserEntity user = securityContextService.getUser();
-        return ResponseEntity.ok(userService.updateUser(dto, user).toDto());
+        return ResponseEntity.ok(toDto(userService.updateUser(dto, user)));
     }
 
     @Override
@@ -45,5 +47,11 @@ public class UserController implements UserApi {
         String userId = securityContextService.getUserId();
         userService.deleteUserByUuid(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    private UserDto toDto(UserEntity user) {
+        return user.toDto(user.computeMaxSubdomainCount(
+                subdomainProperties.getMaxPerFreeUser(),
+                subdomainProperties.getMaxPerPlusUser()));
     }
 }

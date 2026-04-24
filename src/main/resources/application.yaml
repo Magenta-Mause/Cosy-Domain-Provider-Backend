@@ -70,6 +70,9 @@ oauth:
       scope: identify email
       callback-uri: ${OAUTH_DISCORD_CALLBACK_URI:http://localhost:8080/api/v1/auth/oauth/discord/callback}
 
+admin:
+  secret-key: ${ADMIN_SECRET_KEY:change-me-in-prod}
+
 subdomain:
   max-per-free-user: 1
   max-per-plus-user: 5

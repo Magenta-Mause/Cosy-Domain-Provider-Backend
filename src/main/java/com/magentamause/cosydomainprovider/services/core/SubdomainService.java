@@ -66,10 +66,9 @@ public class SubdomainService {
         validateLabel(label);
 
         long ownedCount = subdomainRepository.countByOwner(owner);
-        int limit =
-                owner.getPlan() == Plan.PLUS
-                        ? subdomainProperties.getMaxPerPlusUser()
-                        : subdomainProperties.getMaxPerFreeUser();
+        int limit = owner.computeMaxSubdomainCount(
+                subdomainProperties.getMaxPerFreeUser(),
+                subdomainProperties.getMaxPerPlusUser());
         if (ownedCount >= limit) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Subdomain quota reached (" + limit + " per user)");

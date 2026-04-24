@@ -29,6 +29,7 @@ public class SecurityFilterChainConfig {
                                 authorizeRequests
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
+                                                "/api/v1/admin/**",
                                                 "/v3/api-docs/**",
                                                 "/api/v1/stripe-events",
                                                 "/actuator/**",

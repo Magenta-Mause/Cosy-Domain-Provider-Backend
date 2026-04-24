@@ -7,6 +7,7 @@ import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
+import com.magentamause.cosydomainprovider.services.auth.CaptchaService;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.PasswordResetService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
@@ -24,6 +25,7 @@ public class AuthorizationController implements AuthorizationApi {
     private static final String REFRESH_COOKIE_PATH = "/api/v1/auth/token";
 
     private final AuthorizationService authorizationService;
+    private final CaptchaService captchaService;
     private final UserService userService;
     private final UserVerificationService userVerificationService;
     private final PasswordResetService passwordResetService;
@@ -32,6 +34,7 @@ public class AuthorizationController implements AuthorizationApi {
 
     @Override
     public ResponseEntity<LoginResponseDto> login(LoginDto loginDto, TokenMode tokenMode) {
+        captchaService.verifyCaptcha(loginDto.getCaptchaToken());
         String refreshToken =
                 authorizationService.loginUser(loginDto.getEmail(), loginDto.getPassword());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.OK);
@@ -40,6 +43,7 @@ public class AuthorizationController implements AuthorizationApi {
     @Override
     public ResponseEntity<LoginResponseDto> register(
             UserCreationDto userCreationDto, TokenMode tokenMode) {
+        captchaService.verifyCaptcha(userCreationDto.getCaptchaToken());
         UserEntity user = userService.createUser(userCreationDto);
         String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.CREATED);

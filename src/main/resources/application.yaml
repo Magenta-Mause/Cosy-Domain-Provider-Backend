@@ -73,6 +73,9 @@ oauth:
 admin:
   secret-key: ${ADMIN_SECRET_KEY:change-me-in-prod}
 
+turnstile:
+  secret-key: ${TURNSTILE_SECRET_KEY}
+
 rate-limit:
   auth:
     requests: 10

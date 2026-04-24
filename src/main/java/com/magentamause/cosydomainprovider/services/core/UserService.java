@@ -5,6 +5,7 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
+import com.magentamause.cosydomainprovider.repository.OAuthIdentityRepository;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -19,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final OAuthIdentityRepository oAuthIdentityRepository;
     private final PasswordEncoder passwordEncoder;
     private final SubdomainService subdomainService;
     private final SubdomainProperties subdomainProperties;
@@ -46,7 +49,9 @@ public class UserService {
                                         "User with email " + email + " not found"));
     }
 
+    @Transactional
     public void deleteUserByUuid(String uuid) {
+        oAuthIdentityRepository.deleteAllByUser_Uuid(uuid);
         subdomainService.deleteSubdomainsByOwner(uuid);
         userRepository.deleteById(uuid);
     }

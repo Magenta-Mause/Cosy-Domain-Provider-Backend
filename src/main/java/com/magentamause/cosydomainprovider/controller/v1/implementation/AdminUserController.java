@@ -2,6 +2,7 @@ package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
 import com.magentamause.cosydomainprovider.configuration.admin.AdminProperties;
 import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
+import com.magentamause.cosydomainprovider.controller.v1.schema.AdminApi;
 import com.magentamause.cosydomainprovider.entity.SubdomainEntity;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.admin.AdminSubdomainDto;
@@ -10,28 +11,25 @@ import com.magentamause.cosydomainprovider.model.admin.AdminUserDto;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
-public class AdminUserController {
+public class AdminUserController implements AdminApi {
 
     private final UserRepository userRepository;
     private final SubdomainRepository subdomainRepository;
     private final AdminProperties adminProperties;
     private final SubdomainProperties subdomainProperties;
 
-    @GetMapping("/subdomains")
-    public ResponseEntity<List<AdminSubdomainDto>> getAllSubdomains(
-            @RequestHeader("X-Admin-Key") String adminKey) {
+    @Override
+    public ResponseEntity<List<AdminSubdomainDto>> getAllSubdomains(String adminKey) {
         validateKey(adminKey);
         List<AdminSubdomainDto> dtos = subdomainRepository.findAll().stream()
                 .map(this::toAdminSubdomainDto)
@@ -39,9 +37,8 @@ public class AdminUserController {
         return ResponseEntity.ok(dtos);
     }
 
-    @GetMapping("/users")
-    public ResponseEntity<List<AdminUserDto>> getAllUsers(
-            @RequestHeader("X-Admin-Key") String adminKey) {
+    @Override
+    public ResponseEntity<List<AdminUserDto>> getAllUsers(String adminKey) {
         validateKey(adminKey);
         List<AdminUserDto> dtos = userRepository.findAll().stream()
                 .map(user -> {
@@ -66,10 +63,8 @@ public class AdminUserController {
         return ResponseEntity.ok(dtos);
     }
 
-    @GetMapping("/users/{uuid}")
-    public ResponseEntity<AdminUserDetailDto> getUserDetail(
-            @RequestHeader("X-Admin-Key") String adminKey,
-            @PathVariable String uuid) {
+    @Override
+    public ResponseEntity<AdminUserDetailDto> getUserDetail(String adminKey, String uuid) {
         validateKey(adminKey);
         UserEntity user = userRepository.findById(uuid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -93,11 +88,9 @@ public class AdminUserController {
                 .build());
     }
 
-    @PatchMapping("/users/{uuid}/max-subdomain-override")
+    @Override
     public ResponseEntity<UserDto> setMaxSubdomainOverride(
-            @RequestHeader("X-Admin-Key") String adminKey,
-            @PathVariable String uuid,
-            @RequestBody Map<String, Integer> body) {
+            String adminKey, String uuid, Map<String, Integer> body) {
         validateKey(adminKey);
         UserEntity user = userRepository.findById(uuid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));

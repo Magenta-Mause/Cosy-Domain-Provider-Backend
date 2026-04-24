@@ -9,9 +9,6 @@ import org.thymeleaf.context.Context;
 @RequiredArgsConstructor
 public class EmailTemplateService {
 
-    private static final String DASH_SPAN =
-            "<span style=\"user-select:none;-webkit-user-select:none;\">-</span>";
-
     private final TemplateEngine templateEngine;
 
     public String renderVerificationEmail(String username, String accessToken, String verifyLink) {
@@ -33,7 +30,7 @@ public class EmailTemplateService {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < token.length(); i += 2) {
             if (!sb.isEmpty()) {
-                sb.append(DASH_SPAN);
+                sb.append("-");
             }
             sb.append(token, i, Math.min(i + 2, token.length()));
         }

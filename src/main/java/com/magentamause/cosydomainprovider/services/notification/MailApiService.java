@@ -32,12 +32,12 @@ public class MailApiService implements MessagingService {
                 .subscribe(
                         response -> {
                             if (response.isSuccess()) {
-                                System.out.println("Email sent successfully to " + user.getEmail());
+                                log.info("Email sent successfully to {}", user.getEmail());
                             } else {
-                                System.err.println("Failed to send email to " + user.getEmail());
+                                log.error("Failed to send email to {}, {}", user.getEmail(), response);
                             }
                         },
-                        error -> System.err.println("Error sending email to " + user.getEmail() + ": " + error.getMessage()));
+                        error -> log.error("Error sending email to {}: {}", user.getEmail(), error.getMessage()));
     }
 
     @Override

@@ -82,18 +82,24 @@ public class SubdomainService {
                         .fqdn(fqdn)
                         .owner(owner)
                         .targetIp(dto.getTargetIp())
+                        .targetIpv6(dto.getTargetIpv6())
                         .status(SubdomainStatus.PENDING)
                         .build();
         entity = subdomainRepository.save(entity);
-        return syncToRoute53(entity, dto.getTargetIp(), "Created", owner.getUuid());
+        entity = syncARecordIfPresent(entity, dto.getTargetIp(), "Created", owner.getUuid());
+        entity = syncAAAARecordIfPresent(entity, dto.getTargetIpv6(), "Created", owner.getUuid());
+        return entity;
     }
 
     public SubdomainEntity updateTargetIp(String uuid, SubdomainUpdateDto dto, UserEntity owner) {
         SubdomainEntity entity = getOwnedSubdomain(uuid, owner);
         entity.setTargetIp(dto.getTargetIp());
+        entity.setTargetIpv6(dto.getTargetIpv6());
         entity.setStatus(SubdomainStatus.PENDING);
         entity = subdomainRepository.save(entity);
-        return syncToRoute53(entity, dto.getTargetIp(), "Updated", owner.getUuid());
+        entity = syncARecordIfPresent(entity, dto.getTargetIp(), "Updated", owner.getUuid());
+        entity = syncAAAARecordIfPresent(entity, dto.getTargetIpv6(), "Updated", owner.getUuid());
+        return entity;
     }
 
     public void deleteSubdomain(String uuid) {
@@ -170,16 +176,38 @@ public class SubdomainService {
         }
     }
 
-    private SubdomainEntity syncToRoute53(
+    private SubdomainEntity syncARecordIfPresent(
             SubdomainEntity entity, String targetIp, String verb, Object ownerUuid) {
+        if (targetIp == null || targetIp.isBlank()) return entity;
         String fqdn = fqdnOf(entity);
         try {
             route53Service.upsertARecord(fqdn, targetIp);
             entity.setStatus(SubdomainStatus.ACTIVE);
-            log.info("{} subdomain {} -> {} for user {}", verb, fqdn, targetIp, ownerUuid);
+            log.info("{} A record {} -> {} for user {}", verb, fqdn, targetIp, ownerUuid);
         } catch (Exception e) {
             entity.setStatus(SubdomainStatus.FAILED);
-            log.error("Route53 upsert failed for {} -> {}: {}", fqdn, targetIp, e.getMessage(), e);
+            log.error(
+                    "Route53 A upsert failed for {} -> {}: {}", fqdn, targetIp, e.getMessage(), e);
+        }
+        return subdomainRepository.save(entity);
+    }
+
+    private SubdomainEntity syncAAAARecordIfPresent(
+            SubdomainEntity entity, String targetIpv6, String verb, Object ownerUuid) {
+        if (targetIpv6 == null || targetIpv6.isBlank()) return entity;
+        String fqdn = fqdnOf(entity);
+        try {
+            route53Service.upsertAAAARecord(fqdn, targetIpv6);
+            entity.setStatus(SubdomainStatus.ACTIVE);
+            log.info("{} AAAA record {} -> {} for user {}", verb, fqdn, targetIpv6, ownerUuid);
+        } catch (Exception e) {
+            entity.setStatus(SubdomainStatus.FAILED);
+            log.error(
+                    "Route53 AAAA upsert failed for {} -> {}: {}",
+                    fqdn,
+                    targetIpv6,
+                    e.getMessage(),
+                    e);
         }
         return subdomainRepository.save(entity);
     }
@@ -187,7 +215,12 @@ public class SubdomainService {
     private void deleteSubdomain(SubdomainEntity entity) {
         String fqdn = fqdnOf(entity);
         try {
-            route53Service.deleteARecord(fqdn, entity.getTargetIp());
+            if (entity.getTargetIp() != null && !entity.getTargetIp().isBlank()) {
+                route53Service.deleteARecord(fqdn, entity.getTargetIp());
+            }
+            if (entity.getTargetIpv6() != null && !entity.getTargetIpv6().isBlank()) {
+                route53Service.deleteAAAARecord(fqdn, entity.getTargetIpv6());
+            }
             subdomainRepository.delete(entity);
             log.info("Deleted subdomain {}", fqdn);
         } catch (Exception e) {

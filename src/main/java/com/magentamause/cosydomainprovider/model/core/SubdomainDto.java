@@ -11,6 +11,7 @@ public class SubdomainDto {
     private final String label;
     private final String fqdn;
     private final String targetIp;
+    private final String targetIpv6;
     private final SubdomainStatus status;
     private final Instant createdAt;
     private final Instant updatedAt;

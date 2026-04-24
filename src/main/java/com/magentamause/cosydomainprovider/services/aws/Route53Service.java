@@ -22,11 +22,19 @@ public class Route53Service {
     }
 
     public String upsertARecord(String fqdn, String ip) {
-        return submitChange(ChangeAction.UPSERT, fqdn, ip);
+        return submitChange(ChangeAction.UPSERT, RRType.A, fqdn, ip);
     }
 
     public String deleteARecord(String fqdn, String ip) {
-        return submitChange(ChangeAction.DELETE, fqdn, ip);
+        return submitChange(ChangeAction.DELETE, RRType.A, fqdn, ip);
+    }
+
+    public String upsertAAAARecord(String fqdn, String ip) {
+        return submitChange(ChangeAction.UPSERT, RRType.AAAA, fqdn, ip);
+    }
+
+    public String deleteAAAARecord(String fqdn, String ip) {
+        return submitChange(ChangeAction.DELETE, RRType.AAAA, fqdn, ip);
     }
 
     /**
@@ -80,11 +88,11 @@ public class Route53Service {
         return new DnsEntry(r.name(), r.typeAsString(), r.ttl(), values);
     }
 
-    private String submitChange(ChangeAction action, String name, String ip) {
+    private String submitChange(ChangeAction action, RRType type, String name, String ip) {
         ResourceRecordSet recordSet =
                 ResourceRecordSet.builder()
                         .name(name)
-                        .type(RRType.A)
+                        .type(type)
                         .ttl(props.getDefaultTtl())
                         .resourceRecords(ResourceRecord.builder().value(ip).build())
                         .build();

@@ -7,12 +7,13 @@ import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
 import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,14 +31,13 @@ public class OAuthController implements OAuthApi {
     private final JwtUtils jwtUtils;
 
     @Override
-    public void authorize(String provider, HttpServletResponse response) throws IOException {
+    public ResponseEntity<Void> authorize(String provider) {
         String url = oAuthService.buildAuthorizationUrl(provider);
-        response.sendRedirect(url);
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
 
     @Override
-    public void callback(String provider, String code, String state, HttpServletResponse response)
-            throws IOException {
+    public ResponseEntity<Void> callback(String provider, String code, String state) {
         try {
             UserEntity user = oAuthService.handleCallback(provider, code, state);
             String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
@@ -54,13 +54,18 @@ public class OAuthController implements OAuthApi {
                             .sameSite("Lax")
                             .build();
 
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            response.sendRedirect(oAuthProperties.getFrontendUrl() + "/dashboard");
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                    .location(URI.create(oAuthProperties.getFrontendUrl() + "/dashboard"))
+                    .build();
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
             log.error("OAuth callback failed for provider {}", provider, e);
-            response.sendRedirect(oAuthProperties.getFrontendUrl() + "/login?oauthError=true");
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(
+                            URI.create(oAuthProperties.getFrontendUrl() + "/login?oauthError=true"))
+                    .build();
         }
     }
 }

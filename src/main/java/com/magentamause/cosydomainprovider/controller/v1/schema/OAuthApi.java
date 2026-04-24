@@ -5,8 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,14 +24,12 @@ public interface OAuthApi {
         @ApiResponse(responseCode = "400", description = "Unknown provider")
     })
     @GetMapping("/{provider}/authorize")
-    void authorize(
+    ResponseEntity<Void> authorize(
             @Parameter(
                             description = "OAuth provider name (google, github, discord)",
                             required = true)
                     @PathVariable
-                    String provider,
-            HttpServletResponse response)
-            throws IOException;
+                    String provider);
 
     @Operation(
             summary = "Handle OAuth2 callback",
@@ -53,7 +50,7 @@ public interface OAuthApi {
                         "Token exchange or user-info fetch failed (ResponseStatusException propagated)")
     })
     @GetMapping("/{provider}/callback")
-    void callback(
+    ResponseEntity<Void> callback(
             @Parameter(
                             description = "OAuth provider name (google, github, discord)",
                             required = true)
@@ -64,7 +61,5 @@ public interface OAuthApi {
                     String code,
             @Parameter(description = "State parameter for CSRF validation", required = true)
                     @RequestParam
-                    String state,
-            HttpServletResponse response)
-            throws IOException;
+                    String state);
 }

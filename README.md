@@ -88,7 +88,21 @@ The IAM user / role needs at minimum:
 |---|---|
 | `AWS_HOSTED_ZONE_ID` | Route 53 hosted zone ID (e.g. `Z1D633PJN98FT9`) |
 | `AWS_DOMAIN` | Root domain managed by the hosted zone (e.g. `example.com`) |
+| `MAIL_API_URL` | Base URL of the mail-service used for transactional emails |
+| `MAIL_API_KEY` | API key for the mail service |
+| `FRONTEND_URL` | *(optional)* Frontend base URL for email links and OAuth redirects — defaults to `http://localhost:5173` |
 | `COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY` | *(optional)* 64-char hex secret for JWT signing — a default is used if omitted |
+| `OAUTH_GOOGLE_CLIENT_ID` | Google OAuth2 client ID |
+| `OAUTH_GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret |
+| `OAUTH_GITHUB_CLIENT_ID` | GitHub OAuth2 client ID |
+| `OAUTH_GITHUB_CLIENT_SECRET` | GitHub OAuth2 client secret |
+| `OAUTH_DISCORD_CLIENT_ID` | Discord OAuth2 client ID |
+| `OAUTH_DISCORD_CLIENT_SECRET` | Discord OAuth2 client secret |
+| `OAUTH_SECURE_COOKIE` | *(optional)* Set to `true` in production (HTTPS) — defaults to `false` |
+| `STRIPE_API_KEY` | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_PRODUCT_ID` | Stripe product ID for the Plus plan |
+| `STRIPE_PRICE_ID` | Stripe price ID for the Plus plan |
 
 Export them in your shell before starting:
 
@@ -113,6 +127,15 @@ java -jar target/cosy-domain-provider-*.jar
 ```
 
 The server starts on **http://localhost:8080**.
+
+---
+
+## 5. Format code
+
+```bash
+./mvnw spotless:apply   # format all Java sources (Google Java Format, AOSP style)
+./mvnw spotless:check   # verify formatting without changing files (runs in CI)
+```
 
 ---
 

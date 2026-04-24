@@ -9,11 +9,13 @@ mvn spring-boot:run           # Start dev server at localhost:8080 (env vars set
 mvn test                     # Run all tests
 mvn verify                   # Full build + tests
 mvn compile                  # Compile only (fast sanity check)
+mvn spotless:apply            # Format all Java sources (Google Java Format, AOSP style)
+mvn spotless:check            # Verify formatting without changing files
 ```
 
 ## Key conventions
 
-- **Formatting: Google Java Format** (enforced via `fmt-maven-plugin`). Run `mvn fmt:format` before committing.
+- **Formatting: Google Java Format** (enforced via `spotless-maven-plugin`). Run `mvn spotless:apply` before committing, `mvn spotless:check` to verify.
 - **Lombok everywhere:** Use `@RequiredArgsConstructor` for DI, `@Builder` on entities/DTOs, `@Slf4j` for logging. No manual constructors or getters/setters.
 - **Validation at the boundary:** Use Bean Validation (`@Valid`, `@NotBlank`, `@Size`, etc.) on DTOs. Never validate inside services.
 - **Error responses:** Throw `ResponseStatusException` with an appropriate `HttpStatus`. No custom exception hierarchy unless unavoidable.
@@ -23,8 +25,8 @@ mvn compile                  # Compile only (fast sanity check)
 
 ```
 controller/v1/
-  schema/      ← API interfaces (routing, Swagger annotations, request mapping)
-  impl/        ← @RestController classes that implement the schema interfaces
+  schema/          ← API interfaces (routing, Swagger annotations, request mapping)
+  implementation/  ← @RestController classes that implement the schema interfaces
 entity/        ← JPA entities
 model/
   action/      ← Request DTOs (input)
@@ -43,11 +45,11 @@ security/      ← JWT filter, security config
 
 Every endpoint lives in two files:
 
-**`schema/FooApi.java`** — interface only. Owns `@RequestMapping`, all HTTP method annotations, Swagger `@Tag`/`@Operation`/`@ApiResponse`, and parameter annotations (`@PathVariable`, `@RequestBody`, etc.).
+**`schema/FooApi.java`** — interface only. Owns `@RequestMapping`, all HTTP method annotations, Swagger `@Tag`/`@Operation`/`@ApiResponse`, and parameter annotations (`@PathVariable`, `@RequestBody`, etc.). Paths start with `/v1/` — the `/api` prefix is added centrally via `WebMvcConfig`.
 
 ```java
 @Tag(name = "Foo")
-@RequestMapping("/api/v1/foo")
+@RequestMapping("/v1/foo")
 public interface FooApi {
 
     @Operation(summary = "...")
@@ -56,7 +58,7 @@ public interface FooApi {
 }
 ```
 
-**`impl/FooController.java`** — `@RestController` that `implements FooApi`. No routing annotations here — only `@Override` on each method and the actual logic (or delegation to a service).
+**`implementation/FooController.java`** — `@RestController` that `implements FooApi`. No routing annotations here — only `@Override` on each method and the actual logic (or delegation to a service).
 
 ```java
 @RestController

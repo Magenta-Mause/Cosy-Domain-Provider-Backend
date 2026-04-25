@@ -4,25 +4,14 @@ import com.magentamause.cosydomainprovider.model.core.LabelMode;
 import com.magentamause.cosydomainprovider.model.core.SubdomainDto;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
 import com.magentamause.cosydomainprovider.model.dns.DnsEntry;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Getter
 @Setter
@@ -45,7 +34,7 @@ public class SubdomainEntity {
     @JoinColumn(name = "owner_uuid", nullable = false)
     private UserEntity owner;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String targetIp;
 
     @Column(nullable = true)

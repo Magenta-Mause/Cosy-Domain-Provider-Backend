@@ -7,6 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -73,6 +74,20 @@ public class ExceptionController {
                                 .message(e.getReason() != null ? e.getReason() : e.getMessage())
                                 .statusCode(e.getStatusCode().value())
                                 .errorCode(e.getStatusCode().toString())
+                                .path(request.getRequestURI())
+                                .timestamp(new java.util.Date())
+                                .build());
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<ApiException> handleMissingCookie(
+            MissingRequestCookieException e, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(
+                        ApiException.builder()
+                                .message("Required cookie is missing: " + e.getCookieName())
+                                .statusCode(401)
+                                .errorCode("UNAUTHORIZED")
                                 .path(request.getRequestURI())
                                 .timestamp(new java.util.Date())
                                 .build());

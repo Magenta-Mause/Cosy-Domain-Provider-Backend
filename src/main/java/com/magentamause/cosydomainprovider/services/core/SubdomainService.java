@@ -14,12 +14,12 @@ import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
 import java.util.List;
 import java.util.Locale;
-import software.amazon.awssdk.services.route53.model.InvalidChangeBatchException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.services.route53.model.InvalidChangeBatchException;
 
 /**
  * TODO: add a DuckDNS-style dynamic update endpoint (GET /update?label=...&token=...&ip=...) using
@@ -336,7 +336,9 @@ public class SubdomainService {
                 route53Service.deleteARecord(fqdn, ip);
             }
         } catch (InvalidChangeBatchException e) {
-            log.warn("DNS record {} not found in Route53 during delete (already absent), skipping", fqdn);
+            log.warn(
+                    "DNS record {} not found in Route53 during delete (already absent), skipping",
+                    fqdn);
         }
     }
 

@@ -69,6 +69,7 @@ public class StripeService {
                                             .setPrice(stripeProperties.getPriceId())
                                             .setQuantity(1L)
                                             .build())
+                            .setAllowPromotionCodes(true)
                             .setSuccessUrl(frontendUrl + "/billing?success=true")
                             .setCancelUrl(frontendUrl + "/billing")
                             .putMetadata("userId", user.getUuid())

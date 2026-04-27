@@ -7,6 +7,7 @@ import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.repository.OAuthIdentityRepository;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
+import com.magentamause.cosydomainprovider.services.billing.StripeService;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final SubdomainService subdomainService;
     private final SubdomainProperties subdomainProperties;
+    private final StripeService stripeService;
 
     public Optional<UserEntity> getOptionalUserByUuid(String uuid) {
         return userRepository.findById(uuid);
@@ -51,6 +53,8 @@ public class UserService {
 
     @Transactional
     public void deleteUserByUuid(String uuid) {
+        UserEntity user = getUserByUuid(uuid);
+        stripeService.cancelSubscription(user);
         oAuthIdentityRepository.deleteAllByUser_Uuid(uuid);
         subdomainService.deleteSubdomainsByOwner(uuid);
         userRepository.deleteById(uuid);

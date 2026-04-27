@@ -13,8 +13,10 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
 import com.stripe.model.StripeObject;
 import com.stripe.model.Subscription;
+import com.stripe.model.SubscriptionCollection;
 import com.stripe.net.Webhook;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.SubscriptionListParams;
 import com.stripe.param.billingportal.SessionCreateParams;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -91,6 +93,26 @@ public class StripeService {
             case "invoice.payment_succeeded" -> handleInvoicePaymentSucceeded(event);
             case "customer.subscription.deleted" -> handleSubscriptionDeleted(event);
             default -> log.debug("Unhandled Stripe event type: {}", event.getType());
+        }
+    }
+
+    public void cancelSubscription(UserEntity user) {
+        if (user.getStripeCustomerId() == null) return;
+        try {
+            SubscriptionCollection subscriptions =
+                    Subscription.list(
+                            SubscriptionListParams.builder()
+                                    .setCustomer(user.getStripeCustomerId())
+                                    .setStatus(SubscriptionListParams.Status.ACTIVE)
+                                    .build());
+            for (Subscription subscription : subscriptions.getData()) {
+                subscription.cancel();
+            }
+        } catch (StripeException e) {
+            log.error(
+                    "Failed to cancel Stripe subscription for user {}: {}",
+                    user.getUuid(),
+                    e.getMessage());
         }
     }
 

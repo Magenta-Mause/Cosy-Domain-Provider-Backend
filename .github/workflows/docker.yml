@@ -89,13 +89,15 @@ jobs:
 
       - name: Update backend image tag
         run: |
+          VERSION=${GITHUB_REF_NAME#v}
           cd deploy-repo/overlays/prod
-          kustomize edit set image ghcr.io/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          kustomize edit set image ghcr.io/${{ env.IMAGE_NAME }}:${VERSION}
 
       - name: Commit and push
         run: |
+          VERSION=${GITHUB_REF_NAME#v}
           cd deploy-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git diff --quiet && git diff --staged --quiet || git commit -am "ci: update backend image to ${{ github.ref_name }}"
+          git diff --quiet && git diff --staged --quiet || git commit -am "ci: update backend image to ${VERSION}"
           git push

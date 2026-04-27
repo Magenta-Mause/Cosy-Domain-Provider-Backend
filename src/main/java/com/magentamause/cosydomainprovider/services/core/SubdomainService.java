@@ -14,6 +14,7 @@ import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
 import java.util.List;
 import java.util.Locale;
+import software.amazon.awssdk.services.route53.model.InvalidChangeBatchException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -310,10 +311,10 @@ public class SubdomainService {
         String fqdn = fqdnOf(entity);
         try {
             if (entity.getTargetIp() != null && !entity.getTargetIp().isBlank()) {
-                route53Service.deleteARecord(fqdn, entity.getTargetIp());
+                deleteDnsRecord(fqdn, entity.getTargetIp(), false);
             }
             if (entity.getTargetIpv6() != null && !entity.getTargetIpv6().isBlank()) {
-                route53Service.deleteAAAARecord(fqdn, entity.getTargetIpv6());
+                deleteDnsRecord(fqdn, entity.getTargetIpv6(), true);
             }
             subdomainRepository.delete(entity);
             log.info("Deleted subdomain {}", fqdn);
@@ -324,6 +325,18 @@ public class SubdomainService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_GATEWAY,
                     "Failed to remove DNS record; subdomain marked FAILED and retained for retry");
+        }
+    }
+
+    private void deleteDnsRecord(String fqdn, String ip, boolean ipv6) {
+        try {
+            if (ipv6) {
+                route53Service.deleteAAAARecord(fqdn, ip);
+            } else {
+                route53Service.deleteARecord(fqdn, ip);
+            }
+        } catch (InvalidChangeBatchException e) {
+            log.warn("DNS record {} not found in Route53 during delete (already absent), skipping", fqdn);
         }
     }
 

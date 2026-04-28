@@ -76,6 +76,12 @@ admin:
 turnstile:
   secret-key: ${TURNSTILE_SECRET_KEY}
 
+staging:
+  auth:
+    enabled: ${STAGING_AUTH_ENABLED:false}
+    username: ${STAGING_AUTH_USERNAME:staging}
+    password: ${STAGING_AUTH_PASSWORD:change-me}
+
 rate-limit:
   auth:
     requests: 10

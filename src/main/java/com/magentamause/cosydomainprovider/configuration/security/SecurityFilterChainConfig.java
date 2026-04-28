@@ -32,6 +32,7 @@ public class SecurityFilterChainConfig {
                                                 "/api/v1/admin/**",
                                                 "/api/v3/api-docs/**",
                                                 "/api/v1/stripe-events",
+                                                "/api/v1/staging-auth",
                                                 "/actuator/**",
                                                 "/api/swagger-ui/**")
                                         .permitAll()

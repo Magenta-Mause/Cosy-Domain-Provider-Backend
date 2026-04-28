@@ -40,6 +40,19 @@ public class OAuthController implements OAuthApi {
     public ResponseEntity<Void> callback(String provider, String code, String state) {
         try {
             UserEntity user = oAuthService.handleCallback(provider, code, state);
+
+            if (user.isMfaEnabled()) {
+                String challengeToken =
+                        jwtUtils.generateToken(JwtTokenBody.forMfaChallengeToken(user));
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(
+                                URI.create(
+                                        oAuthProperties.getFrontendUrl()
+                                                + "/mfa-challenge?token="
+                                                + challengeToken))
+                        .build();
+            }
+
             String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
 
             ResponseCookie cookie =

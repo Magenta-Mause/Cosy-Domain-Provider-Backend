@@ -3,11 +3,14 @@ package com.magentamause.cosydomainprovider.controller.v1.schema;
 import com.magentamause.cosydomainprovider.model.action.EmailVerificationDto;
 import com.magentamause.cosydomainprovider.model.action.ForgotPasswordDto;
 import com.magentamause.cosydomainprovider.model.action.LoginDto;
+import com.magentamause.cosydomainprovider.model.action.MfaChallengeDto;
+import com.magentamause.cosydomainprovider.model.action.MfaConfirmDto;
 import com.magentamause.cosydomainprovider.model.action.ResetPasswordDto;
 import com.magentamause.cosydomainprovider.model.action.SetPasswordDto;
 import com.magentamause.cosydomainprovider.model.action.TokenMode;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
+import com.magentamause.cosydomainprovider.model.core.MfaSetupResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -100,4 +103,51 @@ public interface AuthorizationApi {
     })
     @PostMapping("/set-password")
     ResponseEntity<Void> setPassword(@Valid @RequestBody SetPasswordDto dto);
+
+    @Operation(
+            summary = "Initiate MFA setup",
+            description =
+                    "Generates a TOTP secret, stores it, and returns the QR URI and plain secret."
+                            + " Requires a verified account with MFA not yet enabled.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "TOTP setup data returned"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Account not verified"),
+        @ApiResponse(responseCode = "409", description = "MFA already enabled")
+    })
+    @PostMapping("/mfa/setup")
+    ResponseEntity<MfaSetupResponseDto> setupMfa();
+
+    @Operation(
+            summary = "Confirm MFA setup",
+            description =
+                    "Validates the TOTP code against the stored secret and enables MFA on the"
+                            + " account.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "MFA enabled"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Invalid TOTP code or setup not initiated"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    @PostMapping("/mfa/confirm")
+    ResponseEntity<Void> confirmMfa(@Valid @RequestBody MfaConfirmDto dto);
+
+    @Operation(
+            summary = "Complete MFA challenge",
+            description =
+                    "Exchanges a short-lived MFA challenge token and a TOTP code for a refresh"
+                            + " token.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Refresh token issued"),
+        @ApiResponse(
+                responseCode = "401",
+                description = "Invalid or expired challenge token, or wrong TOTP code")
+    })
+    @PostMapping("/mfa/challenge")
+    ResponseEntity<LoginResponseDto> completeMfaChallenge(
+            @Valid @RequestBody MfaChallengeDto dto,
+            @Parameter(description = "COOKIE sets httpOnly cookie, DIRECT returns token in body")
+                    @RequestParam(value = "tokenMode", defaultValue = "COOKIE")
+                    TokenMode tokenMode);
 }

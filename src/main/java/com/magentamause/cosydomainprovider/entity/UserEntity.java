@@ -37,6 +37,11 @@ public class UserEntity {
     private boolean isVerified;
     private boolean needsPasswordSetup;
 
+    @Column(nullable = true)
+    private String mfaSecret;
+
+    @Builder.Default private boolean isMfaEnabled = false;
+
     private String passwordResetToken;
     private Instant passwordResetExpiresAt;
 

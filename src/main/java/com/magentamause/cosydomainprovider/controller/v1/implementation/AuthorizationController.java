@@ -4,11 +4,13 @@ import com.magentamause.cosydomainprovider.controller.v1.schema.AuthorizationApi
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.*;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
+import com.magentamause.cosydomainprovider.model.core.MfaSetupResponseDto;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
 import com.magentamause.cosydomainprovider.services.auth.CaptchaService;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
+import com.magentamause.cosydomainprovider.services.core.MfaService;
 import com.magentamause.cosydomainprovider.services.core.PasswordResetService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
@@ -31,13 +33,20 @@ public class AuthorizationController implements AuthorizationApi {
     private final PasswordResetService passwordResetService;
     private final JwtUtils jwtUtils;
     private final SecurityContextService securityContextService;
+    private final MfaService mfaService;
 
     @Override
     public ResponseEntity<LoginResponseDto> login(LoginDto loginDto, TokenMode tokenMode) {
         captchaService.verifyCaptcha(loginDto.getCaptchaToken());
-        String refreshToken =
+        LoginResponseDto loginResult =
                 authorizationService.loginUser(loginDto.getEmail(), loginDto.getPassword());
-        return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.OK);
+        if (Boolean.TRUE.equals(loginResult.getMfaRequired())) {
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noStore())
+                    .header("Pragma", "no-cache")
+                    .body(loginResult);
+        }
+        return buildRefreshTokenResponse(loginResult.getRefreshToken(), tokenMode, HttpStatus.OK);
     }
 
     @Override
@@ -114,13 +123,41 @@ public class AuthorizationController implements AuthorizationApi {
         return ResponseEntity.noContent().build();
     }
 
+    @Override
+    public ResponseEntity<MfaSetupResponseDto> setupMfa() {
+        UserEntity user = securityContextService.getUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        return ResponseEntity.ok(mfaService.setupMfa(user));
+    }
+
+    @Override
+    public ResponseEntity<Void> confirmMfa(MfaConfirmDto dto) {
+        UserEntity user = securityContextService.getUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        mfaService.confirmMfa(user, dto.getTotpCode());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<LoginResponseDto> completeMfaChallenge(
+            MfaChallengeDto dto, TokenMode tokenMode) {
+        String refreshToken =
+                authorizationService.completeMfaChallenge(
+                        dto.getChallengeToken(), dto.getTotpCode());
+        return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.OK);
+    }
+
     private ResponseEntity<LoginResponseDto> buildRefreshTokenResponse(
             String refreshToken, TokenMode tokenMode, HttpStatus successStatus) {
         if (tokenMode == TokenMode.DIRECT) {
             return ResponseEntity.status(successStatus)
                     .cacheControl(CacheControl.noStore())
                     .header("Pragma", "no-cache")
-                    .body(new LoginResponseDto(refreshToken));
+                    .body(LoginResponseDto.builder().refreshToken(refreshToken).build());
         }
 
         ResponseCookie responseCookie =

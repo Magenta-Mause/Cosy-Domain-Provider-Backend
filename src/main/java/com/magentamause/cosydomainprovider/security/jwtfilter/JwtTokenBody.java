@@ -15,6 +15,7 @@ public class JwtTokenBody {
     private String email;
     private boolean isVerified;
     private boolean needsPasswordSetup;
+    private boolean isMfaEnabled;
     private Plan tier;
     private int maxSubdomainCount;
     private TokenType tokenType;
@@ -22,6 +23,7 @@ public class JwtTokenBody {
     public enum TokenType {
         REFRESH_TOKEN,
         IDENTITY_TOKEN,
+        MFA_CHALLENGE_TOKEN,
     }
 
     public static JwtTokenBody forRefreshToken(UserEntity user) {
@@ -40,8 +42,16 @@ public class JwtTokenBody {
                 .email(user.getEmail())
                 .isVerified(user.isVerified())
                 .needsPasswordSetup(user.isNeedsPasswordSetup())
+                .isMfaEnabled(user.isMfaEnabled())
                 .tier(user.getPlan())
                 .maxSubdomainCount(maxSubdomainCount)
+                .build();
+    }
+
+    public static JwtTokenBody forMfaChallengeToken(UserEntity user) {
+        return JwtTokenBody.builder()
+                .tokenType(TokenType.MFA_CHALLENGE_TOKEN)
+                .userId(user.getUuid())
                 .build();
     }
 
@@ -54,6 +64,7 @@ public class JwtTokenBody {
         if (tokenType == TokenType.IDENTITY_TOKEN) {
             map.put("isVerified", isVerified);
             map.put("needsPasswordSetup", needsPasswordSetup);
+            map.put("isMfaEnabled", isMfaEnabled);
             if (tier != null) map.put("tier", tier.name());
             map.put("maxSubdomainCount", maxSubdomainCount);
         }

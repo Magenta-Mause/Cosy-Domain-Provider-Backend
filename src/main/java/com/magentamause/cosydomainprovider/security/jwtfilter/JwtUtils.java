@@ -26,9 +26,11 @@ public class JwtUtils {
     private final Key jwtSigningKey;
 
     public long getTokenValidityDuration(JwtTokenBody.TokenType tokenType) {
-        return tokenType == JwtTokenBody.TokenType.IDENTITY_TOKEN
-                ? jwtProperties.getIdentityTokenExpirationTime()
-                : jwtProperties.getRefreshTokenExpirationTime();
+        return switch (tokenType) {
+            case IDENTITY_TOKEN -> jwtProperties.getIdentityTokenExpirationTime();
+            case MFA_CHALLENGE_TOKEN -> jwtProperties.getMfaChallengeTokenExpirationTime();
+            default -> jwtProperties.getRefreshTokenExpirationTime();
+        };
     }
 
     public String generateToken(JwtTokenBody body) {

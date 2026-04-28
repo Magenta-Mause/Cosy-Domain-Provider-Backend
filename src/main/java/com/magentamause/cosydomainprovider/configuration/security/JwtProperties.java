@@ -11,4 +11,5 @@ public class JwtProperties {
     private String secretKey;
     private long identityTokenExpirationTime;
     private long refreshTokenExpirationTime;
+    private long mfaChallengeTokenExpirationTime;
 }

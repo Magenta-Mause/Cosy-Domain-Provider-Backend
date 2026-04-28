@@ -171,7 +171,7 @@ public class OAuthService {
                         .email(userInfo.email())
                         .passwordHash(null)
                         .needsPasswordSetup(true)
-                        .isVerified(true)
+                        .isVerified(false)
                         .build());
     }
 

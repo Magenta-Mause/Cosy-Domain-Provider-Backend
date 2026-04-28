@@ -35,6 +35,11 @@ public class StagingAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
+        if (path.startsWith("/actuator/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         if (AUTH_PATH.equals(path)) {
             handleAuthEndpoint(request, response);
             return;

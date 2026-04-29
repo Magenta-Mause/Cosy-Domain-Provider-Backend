@@ -142,3 +142,12 @@ The server starts on **http://localhost:8080**.
 ## API documentation
 
 Swagger UI is available at **http://localhost:8080/api/swagger-ui/index.html** once the app is running.
+
+---
+
+## Related repositories
+
+| Repository | Description |
+|---|---|
+| [Cosy-Domain-Provider-Frontend](https://github.com/Magenta-Mause/Cosy-Domain-Provider-Frontend) | React + Vite frontend — run this alongside the backend for local development |
+| [Cosy-Domain-Provider-Systemtest](https://github.com/Magenta-Mause/Cosy-Domain-Provider-Systemtest) | Playwright end-to-end tests — requires both backend and frontend to be running |

@@ -3,6 +3,7 @@ package com.magentamause.cosydomainprovider.controller.v1.schema;
 import com.magentamause.cosydomainprovider.model.action.AdminSubdomainRelabelDto;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
+import com.magentamause.cosydomainprovider.model.admin.AdminSettingsDto;
 import com.magentamause.cosydomainprovider.model.admin.AdminSubdomainDto;
 import com.magentamause.cosydomainprovider.model.admin.AdminUserDetailDto;
 import com.magentamause.cosydomainprovider.model.admin.AdminUserDto;
@@ -153,4 +154,25 @@ public interface AdminApi {
                     String adminKey,
             @Parameter(description = "User UUID") @PathVariable String uuid,
             @RequestBody Map<String, Integer> body);
+
+    @Operation(summary = "Get global admin settings")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Settings returned"),
+        @ApiResponse(responseCode = "401", description = "Invalid admin key")
+    })
+    @GetMapping("/settings")
+    ResponseEntity<AdminSettingsDto> getSettings(
+            @Parameter(description = "Admin secret key") @RequestHeader("X-Admin-Key")
+                    String adminKey);
+
+    @Operation(summary = "Update global admin settings")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Settings updated"),
+        @ApiResponse(responseCode = "401", description = "Invalid admin key")
+    })
+    @PatchMapping("/settings")
+    ResponseEntity<AdminSettingsDto> updateSettings(
+            @Parameter(description = "Admin secret key") @RequestHeader("X-Admin-Key")
+                    String adminKey,
+            @RequestBody Map<String, Boolean> body);
 }

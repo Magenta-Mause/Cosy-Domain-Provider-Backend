@@ -37,6 +37,7 @@ public class SubdomainService {
     private final SubdomainProperties subdomainProperties;
     private final Route53Properties route53Properties;
     private final SubdomainNameGenerator nameGenerator;
+    private final GlobalSettingsService globalSettingsService;
 
     public List<SubdomainEntity> getSubdomainsForOwner(UserEntity owner) {
         return subdomainRepository.findAllByOwner(owner);
@@ -59,6 +60,11 @@ public class SubdomainService {
     }
 
     public SubdomainEntity createSubdomain(SubdomainCreationDto dto, UserEntity owner) {
+        if (!globalSettingsService.isDomainCreationEnabled()) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Domain creation is currently disabled by admin");
+        }
         if (!owner.isVerified()) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "User must be verified to create subdomains");

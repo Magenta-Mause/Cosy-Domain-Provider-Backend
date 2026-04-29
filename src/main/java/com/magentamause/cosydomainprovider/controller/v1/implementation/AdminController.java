@@ -7,10 +7,12 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.AdminSubdomainRelabelDto;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
+import com.magentamause.cosydomainprovider.model.admin.AdminSettingsDto;
 import com.magentamause.cosydomainprovider.model.admin.AdminSubdomainDto;
 import com.magentamause.cosydomainprovider.model.admin.AdminUserDetailDto;
 import com.magentamause.cosydomainprovider.model.admin.AdminUserDto;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
+import com.magentamause.cosydomainprovider.services.core.GlobalSettingsService;
 import com.magentamause.cosydomainprovider.services.core.SubdomainService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import java.util.List;
@@ -28,6 +30,7 @@ public class AdminController implements AdminApi {
     private final AdminProperties adminProperties;
     private final SubdomainService subdomainService;
     private final UserService userService;
+    private final GlobalSettingsService globalSettingsService;
 
     @Override
     public ResponseEntity<List<AdminSubdomainDto>> getAllSubdomains(String adminKey) {
@@ -121,6 +124,26 @@ public class AdminController implements AdminApi {
                 userService.adminSetMaxSubdomainOverride(
                         uuid, body.get("maxSubdomainCountOverride"));
         return ResponseEntity.ok(user.toDto(userService.computeMaxSubdomainCount(user)));
+    }
+
+    @Override
+    public ResponseEntity<AdminSettingsDto> getSettings(String adminKey) {
+        validateKey(adminKey);
+        return ResponseEntity.ok(
+                AdminSettingsDto.builder()
+                        .domainCreationEnabled(globalSettingsService.isDomainCreationEnabled())
+                        .build());
+    }
+
+    @Override
+    public ResponseEntity<AdminSettingsDto> updateSettings(
+            String adminKey, Map<String, Boolean> body) {
+        validateKey(adminKey);
+        boolean enabled =
+                body.getOrDefault("domainCreationEnabled", true);
+        globalSettingsService.setDomainCreationEnabled(enabled);
+        return ResponseEntity.ok(
+                AdminSettingsDto.builder().domainCreationEnabled(enabled).build());
     }
 
     private void validateKey(String key) {

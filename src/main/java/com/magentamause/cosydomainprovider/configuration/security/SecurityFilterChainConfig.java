@@ -30,6 +30,7 @@ public class SecurityFilterChainConfig {
                                         .requestMatchers(
                                                 "/api/v1/auth/**",
                                                 "/api/v1/admin/**",
+                                                "/api/v1/settings",
                                                 "/api/v3/api-docs/**",
                                                 "/api/v1/stripe-events",
                                                 "/api/v1/staging-auth",

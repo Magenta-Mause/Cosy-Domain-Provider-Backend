@@ -24,7 +24,6 @@ public class MailApiClient {
     public Mono<MailEntityResponse> sendEmail(SendMailDto sendMailDto) {
         return webClient
                 .post()
-                .uri("/mail")
                 .header("Authorization", mailApiClientProperties.apiKey())
                 .bodyValue(sendMailDto)
                 .retrieve()

@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
 
     Optional<UserEntity> findByPasswordResetToken(String passwordResetToken);
 
+    Optional<UserEntity> findByAccessToken(String accessToken);
+
     Optional<UserEntity> findByStripeCustomerId(String stripeCustomerId);
 
     @Query("SELECT COUNT(u) FROM UserEntity u WHERE u.isVerified = false")

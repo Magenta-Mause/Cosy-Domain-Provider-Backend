@@ -58,6 +58,21 @@ public class UserVerificationService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
                                                 "User with id " + uuid + " not found"));
+        validateAndVerify(user, accessToken);
+    }
+
+    public void verifyUserByToken(String accessToken) {
+        UserEntity user =
+                userRepository
+                        .findByAccessToken(accessToken.toUpperCase().replace("-", ""))
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.UNAUTHORIZED, "Invalid access token"));
+        validateAndVerify(user, accessToken);
+    }
+
+    private void validateAndVerify(UserEntity user, String accessToken) {
         if (user.getAccessTokenExpiresAt() == null
                 || Instant.now().isAfter(user.getAccessTokenExpiresAt())) {
             throw new ResponseStatusException(

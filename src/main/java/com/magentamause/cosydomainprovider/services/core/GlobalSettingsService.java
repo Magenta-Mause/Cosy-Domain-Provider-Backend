@@ -28,9 +28,7 @@ public class GlobalSettingsService {
 
     public GlobalSettingsEntity setDomainCreationEnabled(boolean enabled) {
         GlobalSettingsEntity settings =
-                globalSettingsRepository
-                        .findById("global")
-                        .orElse(new GlobalSettingsEntity());
+                globalSettingsRepository.findById("global").orElse(new GlobalSettingsEntity());
         settings.setDomainCreationEnabled(enabled);
         return globalSettingsRepository.save(settings);
     }

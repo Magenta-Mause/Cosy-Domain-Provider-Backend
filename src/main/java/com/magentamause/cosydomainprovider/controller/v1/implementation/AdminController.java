@@ -139,11 +139,9 @@ public class AdminController implements AdminApi {
     public ResponseEntity<AdminSettingsDto> updateSettings(
             String adminKey, Map<String, Boolean> body) {
         validateKey(adminKey);
-        boolean enabled =
-                body.getOrDefault("domainCreationEnabled", true);
+        boolean enabled = body.getOrDefault("domainCreationEnabled", true);
         globalSettingsService.setDomainCreationEnabled(enabled);
-        return ResponseEntity.ok(
-                AdminSettingsDto.builder().domainCreationEnabled(enabled).build());
+        return ResponseEntity.ok(AdminSettingsDto.builder().domainCreationEnabled(enabled).build());
     }
 
     private void validateKey(String key) {

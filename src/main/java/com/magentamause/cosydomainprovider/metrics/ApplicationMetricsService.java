@@ -38,11 +38,17 @@ public class ApplicationMetricsService {
                 .description("Total registered users")
                 .register(registry);
 
-        Gauge.builder("cosy.users.email_unverified", userRepository, UserRepository::countEmailUnverified)
+        Gauge.builder(
+                        "cosy.users.email_unverified",
+                        userRepository,
+                        UserRepository::countEmailUnverified)
                 .description("Users with unverified email")
                 .register(registry);
 
-        Gauge.builder("cosy.users.mfa_not_enabled", userRepository, UserRepository::countMfaNotEnabled)
+        Gauge.builder(
+                        "cosy.users.mfa_not_enabled",
+                        userRepository,
+                        UserRepository::countMfaNotEnabled)
                 .description("Users without MFA enabled")
                 .register(registry);
 

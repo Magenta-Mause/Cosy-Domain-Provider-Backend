@@ -15,8 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class GlobalSettingsEntity {
 
-    @Id
-    private String id = "global";
+    @Id private String id = "global";
 
     @Column(nullable = false)
     private boolean domainCreationEnabled = true;

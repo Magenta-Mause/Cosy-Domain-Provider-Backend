@@ -9,4 +9,6 @@ public interface OAuthIdentityRepository extends JpaRepository<OAuthIdentityEnti
             String provider, String providerSubject);
 
     void deleteAllByUser_Uuid(String userUuid);
+
+    long countByProvider(String provider);
 }

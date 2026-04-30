@@ -15,6 +15,25 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+management:
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: ${METRICS_APPLICATION_TAG:cosy-domain-provider-backend}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  server:
+    port: 8081
+
 aws:
   region: eu-central-1
   route53:

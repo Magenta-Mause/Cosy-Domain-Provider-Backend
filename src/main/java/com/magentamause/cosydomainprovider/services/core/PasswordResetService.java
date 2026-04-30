@@ -51,6 +51,8 @@ public class PasswordResetService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setPasswordResetToken(null);
         user.setPasswordResetExpiresAt(null);
+        user.setMfaEnabled(false);
+        user.setMfaSecret(null);
         userRepository.save(user);
     }
 }

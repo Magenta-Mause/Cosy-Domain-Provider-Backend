@@ -3,6 +3,7 @@ package com.magentamause.cosydomainprovider.services.auth;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.magentamause.cosydomainprovider.configuration.turnstile.TurnstileProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -17,15 +18,22 @@ public class CaptchaService {
 
     private final WebClient webClient;
     private final TurnstileProperties turnstileProperties;
+    private final boolean stagingMode;
 
     public CaptchaService(
             @Qualifier("turnstileWebClient") WebClient webClient,
-            TurnstileProperties turnstileProperties) {
+            TurnstileProperties turnstileProperties,
+            @Value("${staging.auth.enabled:false}") boolean stagingMode) {
         this.webClient = webClient;
         this.turnstileProperties = turnstileProperties;
+        this.stagingMode = stagingMode;
     }
 
     public void verifyCaptcha(String token) {
+        if (stagingMode) {
+            return;
+        }
+
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("secret", turnstileProperties.getSecretKey());
         formData.add("response", token);

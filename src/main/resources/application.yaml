@@ -82,6 +82,8 @@ staging:
     enabled: ${STAGING_AUTH_ENABLED:false}
     username: ${STAGING_AUTH_USERNAME:staging}
     password: ${STAGING_AUTH_PASSWORD:change-me}
+  captcha-bypass:
+    enabled: ${STAGING_CAPTCHA_BYPASS_ENABLED:false}
 
 rate-limit:
   auth:

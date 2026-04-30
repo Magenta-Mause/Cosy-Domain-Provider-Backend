@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
 @Configuration
-@EnableConfigurationProperties(StagingAuthProperties.class)
+@EnableConfigurationProperties({StagingAuthProperties.class, StagingCaptchaBypassProperties.class})
 public class StagingAuthConfig {
 
     @Bean

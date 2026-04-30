@@ -54,6 +54,7 @@ public class AuthorizationController implements AuthorizationApi {
             UserCreationDto userCreationDto, TokenMode tokenMode) {
         captchaService.verifyCaptcha(userCreationDto.getCaptchaToken());
         UserEntity user = userService.createUser(userCreationDto);
+        userVerificationService.sendInitialVerification(user);
         String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.CREATED);
     }

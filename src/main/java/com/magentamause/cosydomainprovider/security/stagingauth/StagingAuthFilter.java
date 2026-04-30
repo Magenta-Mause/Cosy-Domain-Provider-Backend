@@ -35,7 +35,7 @@ public class StagingAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        if (path.startsWith("/actuator/")) {
+        if (path.startsWith("/actuator/") || path.equals("/api/v1/stripe-events")) {
             chain.doFilter(request, response);
             return;
         }

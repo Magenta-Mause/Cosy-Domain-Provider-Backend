@@ -28,7 +28,6 @@ public class UserVerificationService {
         user.setAccessToken(generateAccessToken());
         user.setAccessTokenExpiresAt(Instant.now().plus(3, ChronoUnit.HOURS));
         userRepository.save(user);
-        messagingService.sendUserAccessToken(user);
     }
 
     public void resendVerificationCode(String uuid) {

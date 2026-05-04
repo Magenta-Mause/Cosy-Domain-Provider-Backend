@@ -1,6 +1,7 @@
 package com.magentamause.cosydomainprovider.services.core;
 
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.exception.UserNotFoundException;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
 import com.magentamause.cosydomainprovider.services.notification.MessagingService;
 import java.security.SecureRandom;
@@ -18,7 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserVerificationService {
 
     private static final int ACCESS_TOKEN_LENGTH = 6;
-    private static final String ACCESS_TOKEN_LETTERS = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String VERIFICATION_CODE_CHARSET = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserRepository userRepository;
@@ -32,13 +33,7 @@ public class UserVerificationService {
 
     public void resendVerificationCode(String uuid) {
         UserEntity user =
-                userRepository
-                        .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "User with id " + uuid + " not found"));
+                userRepository.findById(uuid).orElseThrow(() -> UserNotFoundException.byId(uuid));
         if (user.isVerified()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User is already verified");
         }
@@ -50,13 +45,7 @@ public class UserVerificationService {
 
     public void verifyUser(String uuid, String accessToken) {
         UserEntity user =
-                userRepository
-                        .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "User with id " + uuid + " not found"));
+                userRepository.findById(uuid).orElseThrow(() -> UserNotFoundException.byId(uuid));
         validateAndVerify(user, accessToken);
     }
 
@@ -89,9 +78,9 @@ public class UserVerificationService {
                 .mapToObj(
                         i ->
                                 String.valueOf(
-                                        ACCESS_TOKEN_LETTERS.charAt(
+                                        VERIFICATION_CODE_CHARSET.charAt(
                                                 SECURE_RANDOM.nextInt(
-                                                        ACCESS_TOKEN_LETTERS.length()))))
+                                                        VERIFICATION_CODE_CHARSET.length()))))
                 .collect(Collectors.joining());
     }
 }

@@ -1,6 +1,7 @@
 package com.magentamause.cosydomainprovider.controller;
 
-import com.magentamause.cosydomainprovider.model.exception.ApiException;
+import com.magentamause.cosydomainprovider.model.exception.ApiError;
+import com.magentamause.cosydomainprovider.model.exception.DomainException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,12 +17,26 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @Slf4j
 @RestControllerAdvice
 public class ExceptionController {
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ApiError> handleDomainException(
+            DomainException e, HttpServletRequest request) {
+        return ResponseEntity.status(e.getStatus())
+                .body(
+                        ApiError.builder()
+                                .message(e.getMessage())
+                                .statusCode(e.getStatus().value())
+                                .errorCode(e.getErrorCode())
+                                .path(request.getRequestURI())
+                                .timestamp(new java.util.Date())
+                                .build());
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiException> handleException(Exception e, HttpServletRequest request) {
+    public ResponseEntity<ApiError> handleException(Exception e, HttpServletRequest request) {
         log.warn("Internal server error: {}", e.getMessage(), e);
         return ResponseEntity.internalServerError()
                 .body(
-                        ApiException.builder()
+                        ApiError.builder()
                                 .message("An unexpected error occurred")
                                 .statusCode(500)
                                 .errorCode("INTERNAL_SERVER_ERROR")
@@ -31,11 +46,11 @@ public class ExceptionController {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiException> handleValidationException(
+    public ResponseEntity<ApiError> handleValidationException(
             MethodArgumentNotValidException e, HttpServletRequest request) {
         return ResponseEntity.badRequest()
                 .body(
-                        ApiException.builder()
+                        ApiError.builder()
                                 .message(
                                         "Validation failed: "
                                                 + e.getBindingResult().getAllErrors().stream()
@@ -50,12 +65,12 @@ public class ExceptionController {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiException> handleDataIntegrityViolation(
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(
             DataIntegrityViolationException e, HttpServletRequest request) {
         log.warn("Data integrity violation: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(
-                        ApiException.builder()
+                        ApiError.builder()
                                 .message(
                                         "Resource conflict: a record with the same unique value already exists")
                                 .statusCode(409)
@@ -66,11 +81,11 @@ public class ExceptionController {
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ApiException> handleResponseStatusException(
+    public ResponseEntity<ApiError> handleResponseStatusException(
             ResponseStatusException e, HttpServletRequest request) {
         return ResponseEntity.status(e.getStatusCode())
                 .body(
-                        ApiException.builder()
+                        ApiError.builder()
                                 .message(e.getReason() != null ? e.getReason() : e.getMessage())
                                 .statusCode(e.getStatusCode().value())
                                 .errorCode(e.getStatusCode().toString())
@@ -80,11 +95,11 @@ public class ExceptionController {
     }
 
     @ExceptionHandler(MissingRequestCookieException.class)
-    public ResponseEntity<ApiException> handleMissingCookie(
+    public ResponseEntity<ApiError> handleMissingCookie(
             MissingRequestCookieException e, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(
-                        ApiException.builder()
+                        ApiError.builder()
                                 .message("Required cookie is missing: " + e.getCookieName())
                                 .statusCode(401)
                                 .errorCode("UNAUTHORIZED")
@@ -94,11 +109,11 @@ public class ExceptionController {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ApiException> handleResourceNotFoundException(
+    public ResponseEntity<ApiError> handleResourceNotFoundException(
             NoResourceFoundException e, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(
-                        ApiException.builder()
+                        ApiError.builder()
                                 .message("Resource not found")
                                 .statusCode(404)
                                 .errorCode("RESOURCE_NOT_FOUND")

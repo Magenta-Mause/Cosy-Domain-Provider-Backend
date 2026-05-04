@@ -10,10 +10,15 @@ import com.magentamause.cosydomainprovider.model.core.LabelAvailabilityDto;
 import com.magentamause.cosydomainprovider.model.core.LabelMode;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.SubdomainStatus;
+import com.magentamause.cosydomainprovider.model.dns.DnsRecordType;
+import com.magentamause.cosydomainprovider.model.exception.LabelConflictException;
+import com.magentamause.cosydomainprovider.model.exception.SubdomainNotFoundException;
+import com.magentamause.cosydomainprovider.model.exception.SubdomainQuotaExceededException;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,6 +36,10 @@ import software.amazon.awssdk.services.route53.model.InvalidChangeBatchException
 public class SubdomainService {
 
     private static final int MAX_LABEL_ATTEMPTS = 25;
+    private static final String VERB_UPDATED = "Updated";
+    private static final String VERB_CREATED = "Created";
+    private static final String VERB_RELABELED = "Relabeled";
+    private static final String ACTOR_ADMIN = "admin";
 
     private final SubdomainRepository subdomainRepository;
     private final Route53Service route53Service;
@@ -47,14 +56,9 @@ public class SubdomainService {
         SubdomainEntity entity =
                 subdomainRepository
                         .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Subdomain " + uuid + " not found"));
+                        .orElseThrow(() -> new SubdomainNotFoundException(uuid));
         if (!entity.getOwner().getUuid().equals(owner.getUuid())) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Subdomain " + uuid + " not found");
+            throw new SubdomainNotFoundException(uuid);
         }
         return entity;
     }
@@ -83,8 +87,7 @@ public class SubdomainService {
                         subdomainProperties.getMaxPerFreeUser(),
                         subdomainProperties.getMaxPerPlusUser());
         if (ownedCount >= limit) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Subdomain quota reached (" + limit + " per user)");
+            throw new SubdomainQuotaExceededException(limit);
         }
 
         String fqdn = label + "." + route53Properties.getDomain();
@@ -99,8 +102,22 @@ public class SubdomainService {
                         .labelMode(labelMode)
                         .build();
         entity = subdomainRepository.save(entity);
-        entity = syncARecordIfPresent(entity, dto.getTargetIp(), "Created", owner.getUuid());
-        entity = syncAAAARecordIfPresent(entity, dto.getTargetIpv6(), "Created", owner.getUuid());
+        entity =
+                syncDnsRecord(
+                        entity,
+                        dto.getTargetIp(),
+                        DnsRecordType.A,
+                        VERB_CREATED,
+                        owner.getUuid(),
+                        route53Service::upsertARecord);
+        entity =
+                syncDnsRecord(
+                        entity,
+                        dto.getTargetIpv6(),
+                        DnsRecordType.AAAA,
+                        VERB_CREATED,
+                        owner.getUuid(),
+                        route53Service::upsertAAAARecord);
         return entity;
     }
 
@@ -110,8 +127,22 @@ public class SubdomainService {
         entity.setTargetIpv6(dto.getTargetIpv6());
         entity.setStatus(SubdomainStatus.PENDING);
         entity = subdomainRepository.save(entity);
-        entity = syncARecordIfPresent(entity, dto.getTargetIp(), "Updated", owner.getUuid());
-        entity = syncAAAARecordIfPresent(entity, dto.getTargetIpv6(), "Updated", owner.getUuid());
+        entity =
+                syncDnsRecord(
+                        entity,
+                        dto.getTargetIp(),
+                        DnsRecordType.A,
+                        VERB_UPDATED,
+                        owner.getUuid(),
+                        route53Service::upsertARecord);
+        entity =
+                syncDnsRecord(
+                        entity,
+                        dto.getTargetIpv6(),
+                        DnsRecordType.AAAA,
+                        VERB_UPDATED,
+                        owner.getUuid(),
+                        route53Service::upsertAAAARecord);
         return entity;
     }
 
@@ -119,11 +150,7 @@ public class SubdomainService {
         SubdomainEntity entity =
                 subdomainRepository
                         .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Subdomain " + uuid + " not found"));
+                        .orElseThrow(() -> new SubdomainNotFoundException(uuid));
         deleteSubdomain(entity);
     }
 
@@ -138,8 +165,8 @@ public class SubdomainService {
         }
         try {
             validateLabel(normalized);
-        } catch (ResponseStatusException e) {
-            return LabelAvailabilityDto.unavailable(e.getReason());
+        } catch (LabelConflictException e) {
+            return LabelAvailabilityDto.unavailable(e.getMessage());
         }
         return LabelAvailabilityDto.available();
     }
@@ -159,10 +186,7 @@ public class SubdomainService {
     public SubdomainEntity adminGetSubdomain(String uuid) {
         return subdomainRepository
                 .findById(uuid)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND, "Subdomain " + uuid + " not found"));
+                .orElseThrow(() -> new SubdomainNotFoundException(uuid));
     }
 
     public long getCountByOwner(UserEntity owner) {
@@ -173,17 +197,27 @@ public class SubdomainService {
         SubdomainEntity entity =
                 subdomainRepository
                         .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Subdomain " + uuid + " not found"));
+                        .orElseThrow(() -> new SubdomainNotFoundException(uuid));
         entity.setTargetIp(dto.getTargetIp());
         entity.setTargetIpv6(dto.getTargetIpv6());
         entity.setStatus(SubdomainStatus.PENDING);
         entity = subdomainRepository.save(entity);
-        entity = syncARecordIfPresent(entity, dto.getTargetIp(), "Updated", "admin");
-        entity = syncAAAARecordIfPresent(entity, dto.getTargetIpv6(), "Updated", "admin");
+        entity =
+                syncDnsRecord(
+                        entity,
+                        dto.getTargetIp(),
+                        DnsRecordType.A,
+                        VERB_UPDATED,
+                        ACTOR_ADMIN,
+                        route53Service::upsertARecord);
+        entity =
+                syncDnsRecord(
+                        entity,
+                        dto.getTargetIpv6(),
+                        DnsRecordType.AAAA,
+                        VERB_UPDATED,
+                        ACTOR_ADMIN,
+                        route53Service::upsertAAAARecord);
         return entity;
     }
 
@@ -191,28 +225,21 @@ public class SubdomainService {
         SubdomainEntity entity =
                 subdomainRepository
                         .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Subdomain " + uuid + " not found"));
+                        .orElseThrow(() -> new SubdomainNotFoundException(uuid));
         String normalized = newLabel.toLowerCase(Locale.ROOT);
         if (normalized.equalsIgnoreCase(entity.getLabel())) {
             return entity;
         }
         if (subdomainProperties.getReservedLabels().stream()
                 .anyMatch(normalized::equalsIgnoreCase)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Label '" + normalized + "' is reserved");
+            throw LabelConflictException.reserved(normalized);
         }
         subdomainRepository
                 .findByLabelIgnoreCase(normalized)
                 .filter(existing -> !existing.getUuid().equals(uuid))
                 .ifPresent(
                         existing -> {
-                            throw new ResponseStatusException(
-                                    HttpStatus.CONFLICT,
-                                    "Label '" + normalized + "' is already taken");
+                            throw LabelConflictException.taken(normalized);
                         });
 
         String oldFqdn = fqdnOf(entity);
@@ -238,8 +265,22 @@ public class SubdomainService {
         entity.setFqdn(newFqdn);
         entity.setStatus(SubdomainStatus.PENDING);
         entity = subdomainRepository.save(entity);
-        entity = syncARecordIfPresent(entity, entity.getTargetIp(), "Relabeled", "admin");
-        entity = syncAAAARecordIfPresent(entity, entity.getTargetIpv6(), "Relabeled", "admin");
+        entity =
+                syncDnsRecord(
+                        entity,
+                        entity.getTargetIp(),
+                        DnsRecordType.A,
+                        VERB_RELABELED,
+                        ACTOR_ADMIN,
+                        route53Service::upsertARecord);
+        entity =
+                syncDnsRecord(
+                        entity,
+                        entity.getTargetIpv6(),
+                        DnsRecordType.AAAA,
+                        VERB_RELABELED,
+                        ACTOR_ADMIN,
+                        route53Service::upsertAAAARecord);
         return entity;
     }
 
@@ -268,45 +309,33 @@ public class SubdomainService {
 
     private void validateLabel(String label) {
         if (subdomainProperties.getReservedLabels().stream().anyMatch(label::equalsIgnoreCase)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Label '" + label + "' is reserved");
+            throw LabelConflictException.reserved(label);
         }
         if (subdomainRepository.findByLabelIgnoreCase(label).isPresent()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Label '" + label + "' is already taken");
+            throw LabelConflictException.taken(label);
         }
     }
 
-    private SubdomainEntity syncARecordIfPresent(
-            SubdomainEntity entity, String targetIp, String verb, Object ownerUuid) {
-        if (targetIp == null || targetIp.isBlank()) return entity;
+    private SubdomainEntity syncDnsRecord(
+            SubdomainEntity entity,
+            String ip,
+            DnsRecordType recordType,
+            String verb,
+            Object ownerUuid,
+            BiConsumer<String, String> upsert) {
+        if (ip == null || ip.isBlank()) return entity;
         String fqdn = fqdnOf(entity);
         try {
-            route53Service.upsertARecord(fqdn, targetIp);
+            upsert.accept(fqdn, ip);
             entity.setStatus(SubdomainStatus.ACTIVE);
-            log.info("{} A record {} -> {} for user {}", verb, fqdn, targetIp, ownerUuid);
+            log.info("{} {} record {} -> {} for user {}", verb, recordType, fqdn, ip, ownerUuid);
         } catch (Exception e) {
             entity.setStatus(SubdomainStatus.FAILED);
             log.error(
-                    "Route53 A upsert failed for {} -> {}: {}", fqdn, targetIp, e.getMessage(), e);
-        }
-        return subdomainRepository.save(entity);
-    }
-
-    private SubdomainEntity syncAAAARecordIfPresent(
-            SubdomainEntity entity, String targetIpv6, String verb, Object ownerUuid) {
-        if (targetIpv6 == null || targetIpv6.isBlank()) return entity;
-        String fqdn = fqdnOf(entity);
-        try {
-            route53Service.upsertAAAARecord(fqdn, targetIpv6);
-            entity.setStatus(SubdomainStatus.ACTIVE);
-            log.info("{} AAAA record {} -> {} for user {}", verb, fqdn, targetIpv6, ownerUuid);
-        } catch (Exception e) {
-            entity.setStatus(SubdomainStatus.FAILED);
-            log.error(
-                    "Route53 AAAA upsert failed for {} -> {}: {}",
+                    "Route53 {} upsert failed for {} -> {}: {}",
+                    recordType,
                     fqdn,
-                    targetIpv6,
+                    ip,
                     e.getMessage(),
                     e);
         }
@@ -317,10 +346,10 @@ public class SubdomainService {
         String fqdn = fqdnOf(entity);
         try {
             if (entity.getTargetIp() != null && !entity.getTargetIp().isBlank()) {
-                deleteDnsRecord(fqdn, entity.getTargetIp(), false);
+                deleteDnsRecord(fqdn, entity.getTargetIp(), DnsRecordType.A);
             }
             if (entity.getTargetIpv6() != null && !entity.getTargetIpv6().isBlank()) {
-                deleteDnsRecord(fqdn, entity.getTargetIpv6(), true);
+                deleteDnsRecord(fqdn, entity.getTargetIpv6(), DnsRecordType.AAAA);
             }
             subdomainRepository.delete(entity);
             log.info("Deleted subdomain {}", fqdn);
@@ -334,9 +363,9 @@ public class SubdomainService {
         }
     }
 
-    private void deleteDnsRecord(String fqdn, String ip, boolean ipv6) {
+    private void deleteDnsRecord(String fqdn, String ip, DnsRecordType recordType) {
         try {
-            if (ipv6) {
+            if (recordType == DnsRecordType.AAAA) {
                 route53Service.deleteAAAARecord(fqdn, ip);
             } else {
                 route53Service.deleteARecord(fqdn, ip);

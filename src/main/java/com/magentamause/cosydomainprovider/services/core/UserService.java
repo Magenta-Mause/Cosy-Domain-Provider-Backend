@@ -5,6 +5,7 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
+import com.magentamause.cosydomainprovider.model.exception.UserNotFoundException;
 import com.magentamause.cosydomainprovider.repository.OAuthIdentityRepository;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
 import com.magentamause.cosydomainprovider.services.billing.StripeService;
@@ -33,22 +34,13 @@ public class UserService {
     }
 
     public UserEntity getUserByUuid(String uuid) {
-        return getOptionalUserByUuid(uuid)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "User with id " + uuid + " not found"));
+        return getOptionalUserByUuid(uuid).orElseThrow(() -> UserNotFoundException.byId(uuid));
     }
 
     public UserEntity getUserByEmail(String email) {
         return userRepository
                 .findByEmailIgnoreCase(email)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "User with email " + email + " not found"));
+                .orElseThrow(() -> UserNotFoundException.byEmail(email));
     }
 
     @Transactional

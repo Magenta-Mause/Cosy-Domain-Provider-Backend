@@ -74,10 +74,9 @@ public class MailApiService implements MessagingService {
                             }
                         },
                         error ->
-                                System.err.println(
-                                        "Error sending password reset email to "
-                                                + user.getEmail()
-                                                + ": "
-                                                + error.getMessage()));
+                                log.error(
+                                        "Error sending password reset email to {}: {}",
+                                        user.getEmail(),
+                                        error.getMessage()));
     }
 }

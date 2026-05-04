@@ -11,7 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 @Setter
 public class AuthenticationToken extends UsernamePasswordAuthenticationToken {
     private String userId;
-    private UserEntity user;
+    private transient UserEntity user;
 
     public AuthenticationToken(String userId, UserEntity user) {
         super(userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));

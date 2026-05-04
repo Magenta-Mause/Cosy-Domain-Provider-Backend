@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ApiException {
+public class ApiError {
     private final String message;
     private final int statusCode;
     private final String errorCode;

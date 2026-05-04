@@ -14,6 +14,7 @@ import com.magentamause.cosydomainprovider.services.core.MfaService;
 import com.magentamause.cosydomainprovider.services.core.PasswordResetService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,7 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class AuthorizationController implements AuthorizationApi {
 
-    private static final int MILLISECONDS_IN_SECOND = 1000;
     private static final String REFRESH_COOKIE_PATH = "/api/v1/auth/token";
 
     private final AuthorizationService authorizationService;
@@ -167,9 +167,9 @@ public class AuthorizationController implements AuthorizationApi {
                         .httpOnly(true)
                         .secure(false)
                         .maxAge(
-                                jwtUtils.getTokenValidityDuration(
-                                                JwtTokenBody.TokenType.REFRESH_TOKEN)
-                                        / MILLISECONDS_IN_SECOND)
+                                TimeUnit.MILLISECONDS.toSeconds(
+                                        jwtUtils.getTokenValidityDuration(
+                                                JwtTokenBody.TokenType.REFRESH_TOKEN)))
                         .path(REFRESH_COOKIE_PATH)
                         .sameSite("Strict")
                         .build();

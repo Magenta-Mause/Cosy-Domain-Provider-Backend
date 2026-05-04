@@ -134,7 +134,7 @@ public class StripeService {
     }
 
     private void handleInvoicePaymentSucceeded(Event event) {
-        Invoice invoice = deserialize(event, Invoice.class);
+        Invoice invoice = deserialize(event);
         if (invoice == null) return;
         String customerId = invoice.getCustomer();
 
@@ -151,7 +151,7 @@ public class StripeService {
     }
 
     private void handleSubscriptionDeleted(Event event) {
-        Subscription subscription = deserialize(event, Subscription.class);
+        Subscription subscription = deserialize(event);
         if (subscription == null) return;
         String customerId = subscription.getCustomer();
 
@@ -165,7 +165,7 @@ public class StripeService {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends StripeObject> T deserialize(Event event, Class<T> type) {
+    private <T extends StripeObject> T deserialize(Event event) {
         EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
         if (deserializer.getObject().isPresent()) {
             return (T) deserializer.getObject().get();

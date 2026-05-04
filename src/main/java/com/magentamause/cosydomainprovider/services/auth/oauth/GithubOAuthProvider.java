@@ -11,6 +11,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 class GithubOAuthProvider implements OAuthProviderClient {
 
+    private static final String KEY_EMAIL = "email";
+
     @Override
     public String providerName() {
         return "github";
@@ -36,8 +38,8 @@ class GithubOAuthProvider implements OAuthProviderClient {
         }
 
         String email =
-                raw.get("email") != null
-                        ? String.valueOf(raw.get("email"))
+                raw.get(KEY_EMAIL) != null
+                        ? String.valueOf(raw.get(KEY_EMAIL))
                         : fetchPrimaryEmail(accessToken, webClient);
 
         return new OAuthUserInfo(
@@ -73,7 +75,7 @@ class GithubOAuthProvider implements OAuthProviderClient {
                                 emails.stream()
                                         .filter(e -> Boolean.TRUE.equals(e.get("verified")))
                                         .findFirst())
-                .map(e -> String.valueOf(e.get("email")))
+                .map(e -> String.valueOf(e.get(KEY_EMAIL)))
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(

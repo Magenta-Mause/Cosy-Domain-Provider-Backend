@@ -10,25 +10,27 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class GlobalSettingsService {
 
+    private static final String SETTINGS_ID = "global";
+
     private final GlobalSettingsRepository globalSettingsRepository;
 
     @PostConstruct
     public void init() {
-        if (!globalSettingsRepository.existsById("global")) {
+        if (!globalSettingsRepository.existsById(SETTINGS_ID)) {
             globalSettingsRepository.save(new GlobalSettingsEntity());
         }
     }
 
     public boolean isDomainCreationEnabled() {
         return globalSettingsRepository
-                .findById("global")
+                .findById(SETTINGS_ID)
                 .map(GlobalSettingsEntity::isDomainCreationEnabled)
                 .orElse(true);
     }
 
     public GlobalSettingsEntity setDomainCreationEnabled(boolean enabled) {
         GlobalSettingsEntity settings =
-                globalSettingsRepository.findById("global").orElse(new GlobalSettingsEntity());
+                globalSettingsRepository.findById(SETTINGS_ID).orElse(new GlobalSettingsEntity());
         settings.setDomainCreationEnabled(enabled);
         return globalSettingsRepository.save(settings);
     }

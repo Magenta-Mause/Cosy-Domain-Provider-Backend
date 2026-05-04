@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.util.Base64;
 import javax.crypto.Mac;
@@ -21,6 +22,7 @@ public class StagingAuthFilter extends OncePerRequestFilter {
 
     static final String COOKIE_NAME = "STAGING_AUTH";
     static final String AUTH_PATH = "/api/v1/staging-auth";
+    private static final String CONTENT_TYPE_JSON = "application/json";
 
     private final StagingAuthProperties properties;
 
@@ -58,7 +60,7 @@ public class StagingAuthFilter extends OncePerRequestFilter {
         if (HttpMethod.GET.matches(request.getMethod())) {
             if (hasValidStagingCookie(request)) {
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.setContentType("application/json");
+                response.setContentType(CONTENT_TYPE_JSON);
                 response.getWriter().write("{}");
             } else {
                 writeUnauthorized(response, "Staging authentication required");
@@ -75,7 +77,7 @@ public class StagingAuthFilter extends OncePerRequestFilter {
                             properties.password().getBytes(StandardCharsets.UTF_8))) {
                 setStagingCookie(response);
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.setContentType("application/json");
+                response.setContentType(CONTENT_TYPE_JSON);
                 response.getWriter().write("{}");
             } else {
                 writeUnauthorized(response, "Invalid staging credentials");
@@ -116,8 +118,8 @@ public class StagingAuthFilter extends OncePerRequestFilter {
                             properties.password().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             byte[] hmac = mac.doFinal(properties.username().getBytes(StandardCharsets.UTF_8));
             return Base64.getUrlEncoder().withoutPadding().encodeToString(hmac);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to compute staging cookie value", e);
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Failed to compute staging cookie value", e);
         }
     }
 
@@ -140,7 +142,7 @@ public class StagingAuthFilter extends OncePerRequestFilter {
     private void writeUnauthorized(HttpServletResponse response, String message)
             throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
+        response.setContentType(CONTENT_TYPE_JSON);
         response.getWriter().write("{\"error\":\"" + message + "\"}");
     }
 }

@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class StripeConfig {
 
     @Bean
-    CommandLineRunner initStripe(StripeProperties props) {
+    static CommandLineRunner initStripe(StripeProperties props) {
         return args -> Stripe.apiKey = props.getApiKey();
     }
 }

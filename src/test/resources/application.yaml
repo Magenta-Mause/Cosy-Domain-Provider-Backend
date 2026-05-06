@@ -1,0 +1,98 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+aws:
+  region: us-east-1
+  route53:
+    hosted-zone-id: test-zone
+    domain: test.example.com
+    default-ttl: 300
+
+jwt:
+  secret-key: e8996bf24977ce5615015c717447911799207025d1998a01256b7b7717bac18e
+  identity-token-expiration-time: 3600000
+  refresh-token-expiration-time: 2678400000
+  mfa-challenge-token-expiration-time: 300000
+
+client:
+  mail:
+    url: http://localhost:9999
+    api-key: test-key
+
+frontend:
+  url: http://localhost:5173
+
+stripe:
+  api-key: sk_test_placeholder
+  webhook-secret: whsec_placeholder
+  product-id: prod_placeholder
+  price-id: price_placeholder
+
+oauth:
+  frontend-url: http://localhost:5173
+  secure-cookie: false
+  providers:
+    google:
+      client-id: test-google-client-id
+      client-secret: test-google-secret
+      authorization-uri: http://localhost/oauth/google/auth
+      token-uri: http://localhost/oauth/google/token
+      user-info-uri: http://localhost/oauth/google/userinfo
+      scope: openid email profile
+      callback-uri: http://localhost/callback/google
+    github:
+      client-id: test-github-client-id
+      client-secret: test-github-secret
+      authorization-uri: http://localhost/oauth/github/auth
+      token-uri: http://localhost/oauth/github/token
+      user-info-uri: http://localhost/oauth/github/userinfo
+      scope: read:user,user:email
+      callback-uri: http://localhost/callback/github
+    discord:
+      client-id: test-discord-client-id
+      client-secret: test-discord-secret
+      authorization-uri: http://localhost/oauth/discord/auth
+      token-uri: http://localhost/oauth/discord/token
+      user-info-uri: http://localhost/oauth/discord/userinfo
+      scope: identify email
+      callback-uri: http://localhost/callback/discord
+
+admin:
+  secret-key: test-admin-secret
+
+turnstile:
+  secret-key: test-turnstile-secret
+
+staging:
+  auth:
+    enabled: false
+    username: staging
+    password: change-me
+  captcha-bypass:
+    enabled: false
+
+rate-limit:
+  auth:
+    requests: 10
+    period-seconds: 60
+  global:
+    requests: 60
+    period-seconds: 60
+
+subdomain:
+  max-per-free-user: 1
+  max-per-plus-user: 5
+  reserved-labels:
+    - www
+    - api
+    - admin

@@ -64,27 +64,37 @@ class JwtUtilsTest {
     @Test
     void generateAndParseMfaChallengeToken_roundtrip() {
         String token = jwtUtils.generateToken(JwtTokenBody.forMfaChallengeToken(user()));
-        Claims claims = jwtUtils.getTokenContentBody(token, JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN);
+        Claims claims =
+                jwtUtils.getTokenContentBody(token, JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN);
         assertThat(claims.getSubject()).isEqualTo("u1");
     }
 
     @Test
     void getTokenContentBody_wrongType_throwsSecurityException() {
         String token = jwtUtils.generateToken(JwtTokenBody.forRefreshToken(user()));
-        assertThatThrownBy(() -> jwtUtils.getTokenContentBody(token, JwtTokenBody.TokenType.IDENTITY_TOKEN))
+        assertThatThrownBy(
+                        () ->
+                                jwtUtils.getTokenContentBody(
+                                        token, JwtTokenBody.TokenType.IDENTITY_TOKEN))
                 .isInstanceOf(SecurityException.class);
     }
 
     @Test
     void getTokenContentBody_malformedToken_throwsSecurityException() {
-        assertThatThrownBy(() -> jwtUtils.getTokenContentBody("not-a-jwt", JwtTokenBody.TokenType.REFRESH_TOKEN))
+        assertThatThrownBy(
+                        () ->
+                                jwtUtils.getTokenContentBody(
+                                        "not-a-jwt", JwtTokenBody.TokenType.REFRESH_TOKEN))
                 .isInstanceOf(SecurityException.class);
     }
 
     @Test
     void getTokenValidityDuration_returnsCorrectValues() {
-        assertThat(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.IDENTITY_TOKEN)).isEqualTo(3_600_000L);
-        assertThat(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN)).isEqualTo(2_678_400_000L);
-        assertThat(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN)).isEqualTo(300_000L);
+        assertThat(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.IDENTITY_TOKEN))
+                .isEqualTo(3_600_000L);
+        assertThat(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN))
+                .isEqualTo(2_678_400_000L);
+        assertThat(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN))
+                .isEqualTo(300_000L);
     }
 }

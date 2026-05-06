@@ -62,11 +62,20 @@ class UserVerificationServiceTest {
 
     @Test
     void resendVerificationCode_alreadyVerified_throws() {
-        UserEntity u = UserEntity.builder().uuid("u1").username("a").email("a@a.com").isVerified(true).build();
+        UserEntity u =
+                UserEntity.builder()
+                        .uuid("u1")
+                        .username("a")
+                        .email("a@a.com")
+                        .isVerified(true)
+                        .build();
         when(userRepository.findById("u1")).thenReturn(Optional.of(u));
         assertThatThrownBy(() -> service.resendVerificationCode("u1"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.CONFLICT));
     }
 
     @Test
@@ -105,7 +114,10 @@ class UserVerificationServiceTest {
 
         assertThatThrownBy(() -> service.verifyUser("u1", "ABC123"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test
@@ -115,7 +127,10 @@ class UserVerificationServiceTest {
 
         assertThatThrownBy(() -> service.verifyUser("u1", "WRONG1"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
@@ -133,7 +148,10 @@ class UserVerificationServiceTest {
         when(userRepository.findByAccessToken("BAD")).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.verifyUserByToken("BAD"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test

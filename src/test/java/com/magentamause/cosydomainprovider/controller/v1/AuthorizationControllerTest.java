@@ -46,15 +46,27 @@ class AuthorizationControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new AuthorizationController(
-                authorizationService, captchaService, userService,
-                userVerificationService, passwordResetService, jwtUtils,
-                securityContextService, mfaService);
-        when(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN)).thenReturn(2_678_400_000L);
+        controller =
+                new AuthorizationController(
+                        authorizationService,
+                        captchaService,
+                        userService,
+                        userVerificationService,
+                        passwordResetService,
+                        jwtUtils,
+                        securityContextService,
+                        mfaService);
+        when(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN))
+                .thenReturn(2_678_400_000L);
     }
 
     private UserEntity user() {
-        return UserEntity.builder().uuid("u1").username("alice").email("a@a.com").isVerified(true).build();
+        return UserEntity.builder()
+                .uuid("u1")
+                .username("alice")
+                .email("a@a.com")
+                .isVerified(true)
+                .build();
     }
 
     // ---- login ----
@@ -62,8 +74,11 @@ class AuthorizationControllerTest {
     @Test
     void login_mfaRequired_returnsChallenge() {
         LoginDto dto = new LoginDto();
-        dto.setEmail("a@a.com"); dto.setPassword("pass"); dto.setCaptchaToken("tok");
-        LoginResponseDto loginResp = LoginResponseDto.builder().mfaRequired(true).challengeToken("challenge").build();
+        dto.setEmail("a@a.com");
+        dto.setPassword("pass");
+        dto.setCaptchaToken("tok");
+        LoginResponseDto loginResp =
+                LoginResponseDto.builder().mfaRequired(true).challengeToken("challenge").build();
         when(authorizationService.loginUser("a@a.com", "pass")).thenReturn(loginResp);
 
         ResponseEntity<LoginResponseDto> resp = controller.login(dto, TokenMode.DIRECT);
@@ -74,7 +89,9 @@ class AuthorizationControllerTest {
     @Test
     void login_directMode_returnsRefreshToken() {
         LoginDto dto = new LoginDto();
-        dto.setEmail("a@a.com"); dto.setPassword("pass"); dto.setCaptchaToken("tok");
+        dto.setEmail("a@a.com");
+        dto.setPassword("pass");
+        dto.setCaptchaToken("tok");
         LoginResponseDto loginResp = LoginResponseDto.builder().refreshToken("rt").build();
         when(authorizationService.loginUser("a@a.com", "pass")).thenReturn(loginResp);
 
@@ -86,20 +103,28 @@ class AuthorizationControllerTest {
     @Test
     void login_cookieMode_setsCookie() {
         LoginDto dto = new LoginDto();
-        dto.setEmail("a@a.com"); dto.setPassword("pass"); dto.setCaptchaToken("tok");
+        dto.setEmail("a@a.com");
+        dto.setPassword("pass");
+        dto.setCaptchaToken("tok");
         LoginResponseDto loginResp = LoginResponseDto.builder().refreshToken("rt").build();
         when(authorizationService.loginUser("a@a.com", "pass")).thenReturn(loginResp);
 
         ResponseEntity<LoginResponseDto> resp = controller.login(dto, TokenMode.COOKIE);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(resp.getHeaders().get(org.springframework.http.HttpHeaders.SET_COOKIE) != null).isTrue();
+        assertThat(resp.getHeaders().get(org.springframework.http.HttpHeaders.SET_COOKIE) != null)
+                .isTrue();
     }
 
     // ---- register ----
 
     @Test
     void register_directMode_returnsCreated() {
-        UserCreationDto dto = UserCreationDto.builder().username("alice").email("a@a.com").password("password1").build();
+        UserCreationDto dto =
+                UserCreationDto.builder()
+                        .username("alice")
+                        .email("a@a.com")
+                        .password("password1")
+                        .build();
         UserEntity created = user();
         when(userService.createUser(dto)).thenReturn(created);
         when(authorizationService.generateRefreshToken("u1")).thenReturn("rt");
@@ -111,14 +136,20 @@ class AuthorizationControllerTest {
 
     @Test
     void register_cookieMode_setsCookie() {
-        UserCreationDto dto = UserCreationDto.builder().username("alice").email("a@a.com").password("password1").build();
+        UserCreationDto dto =
+                UserCreationDto.builder()
+                        .username("alice")
+                        .email("a@a.com")
+                        .password("password1")
+                        .build();
         UserEntity created = user();
         when(userService.createUser(dto)).thenReturn(created);
         when(authorizationService.generateRefreshToken("u1")).thenReturn("rt");
 
         ResponseEntity<LoginResponseDto> resp = controller.register(dto, TokenMode.COOKIE);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(resp.getHeaders().get(org.springframework.http.HttpHeaders.SET_COOKIE) != null).isTrue();
+        assertThat(resp.getHeaders().get(org.springframework.http.HttpHeaders.SET_COOKIE) != null)
+                .isTrue();
     }
 
     // ---- fetchToken ----
@@ -137,7 +168,8 @@ class AuthorizationControllerTest {
     void logout_returnsNoContentWithDeleteCookie() {
         ResponseEntity<Void> resp = controller.logout();
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        assertThat(resp.getHeaders().get(org.springframework.http.HttpHeaders.SET_COOKIE) != null).isTrue();
+        assertThat(resp.getHeaders().get(org.springframework.http.HttpHeaders.SET_COOKIE) != null)
+                .isTrue();
     }
 
     // ---- resendVerification ----
@@ -147,7 +179,10 @@ class AuthorizationControllerTest {
         when(securityContextService.getUser()).thenReturn(null);
         assertThatThrownBy(() -> controller.resendVerification())
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
@@ -198,7 +233,8 @@ class AuthorizationControllerTest {
     @Test
     void resetPassword_returnsNoContent() {
         ResetPasswordDto dto = new ResetPasswordDto();
-        dto.setToken("tok"); dto.setNewPassword("newpass1");
+        dto.setToken("tok");
+        dto.setNewPassword("newpass1");
         ResponseEntity<Void> resp = controller.resetPassword(dto);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(passwordResetService).confirmPasswordReset("tok", "newpass1");
@@ -209,17 +245,22 @@ class AuthorizationControllerTest {
     @Test
     void setPassword_noUser_throwsUnauthorized() {
         when(securityContextService.getUser()).thenReturn(null);
-        SetPasswordDto dto = new SetPasswordDto(); dto.setPassword("password1");
+        SetPasswordDto dto = new SetPasswordDto();
+        dto.setPassword("password1");
         assertThatThrownBy(() -> controller.setPassword(dto))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
     void setPassword_success() {
         UserEntity u = user();
         when(securityContextService.getUser()).thenReturn(u);
-        SetPasswordDto dto = new SetPasswordDto(); dto.setPassword("password1");
+        SetPasswordDto dto = new SetPasswordDto();
+        dto.setPassword("password1");
         ResponseEntity<Void> resp = controller.setPassword(dto);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(userService).setPassword("u1", "password1");
@@ -232,14 +273,18 @@ class AuthorizationControllerTest {
         when(securityContextService.getUser()).thenReturn(null);
         assertThatThrownBy(() -> controller.setupMfa())
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
     void setupMfa_success() {
         UserEntity u = user();
         when(securityContextService.getUser()).thenReturn(u);
-        MfaSetupResponseDto dto = MfaSetupResponseDto.builder().totpUri("otpauth://...").secret("sec").build();
+        MfaSetupResponseDto dto =
+                MfaSetupResponseDto.builder().totpUri("otpauth://...").secret("sec").build();
         when(mfaService.setupMfa(u)).thenReturn(dto);
         ResponseEntity<MfaSetupResponseDto> resp = controller.setupMfa();
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -251,17 +296,22 @@ class AuthorizationControllerTest {
     @Test
     void confirmMfa_noUser_throwsUnauthorized() {
         when(securityContextService.getUser()).thenReturn(null);
-        MfaConfirmDto dto = new MfaConfirmDto(); dto.setTotpCode("123456");
+        MfaConfirmDto dto = new MfaConfirmDto();
+        dto.setTotpCode("123456");
         assertThatThrownBy(() -> controller.confirmMfa(dto))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
     void confirmMfa_success() {
         UserEntity u = user();
         when(securityContextService.getUser()).thenReturn(u);
-        MfaConfirmDto dto = new MfaConfirmDto(); dto.setTotpCode("123456");
+        MfaConfirmDto dto = new MfaConfirmDto();
+        dto.setTotpCode("123456");
         ResponseEntity<Void> resp = controller.confirmMfa(dto);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(mfaService).confirmMfa(u, "123456");
@@ -272,10 +322,12 @@ class AuthorizationControllerTest {
     @Test
     void completeMfaChallenge_directMode_returnsToken() {
         MfaChallengeDto dto = new MfaChallengeDto();
-        dto.setChallengeToken("ct"); dto.setTotpCode("123456");
+        dto.setChallengeToken("ct");
+        dto.setTotpCode("123456");
         when(authorizationService.completeMfaChallenge("ct", "123456")).thenReturn("rt");
 
-        ResponseEntity<LoginResponseDto> resp = controller.completeMfaChallenge(dto, TokenMode.DIRECT);
+        ResponseEntity<LoginResponseDto> resp =
+                controller.completeMfaChallenge(dto, TokenMode.DIRECT);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resp.getBody().getRefreshToken()).isEqualTo("rt");
     }

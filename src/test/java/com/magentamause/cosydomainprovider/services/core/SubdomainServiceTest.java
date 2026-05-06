@@ -348,8 +348,7 @@ class SubdomainServiceTest {
     @Test
     void adminGetAllSubdomains_returnsList() {
         UserEntity owner = verifiedFreeUser();
-        when(subdomainRepository.findAll())
-                .thenReturn(List.of(subdomain("s1", "foo", owner)));
+        when(subdomainRepository.findAll()).thenReturn(List.of(subdomain("s1", "foo", owner)));
         assertThat(service.adminGetAllSubdomains()).hasSize(1);
     }
 

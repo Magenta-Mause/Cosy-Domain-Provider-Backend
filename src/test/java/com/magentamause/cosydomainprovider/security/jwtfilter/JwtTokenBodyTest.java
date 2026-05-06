@@ -57,7 +57,8 @@ class JwtTokenBodyTest {
     void toClaimsMap_identityToken_containsAllFields() {
         JwtTokenBody body = JwtTokenBody.forIdentityToken(user(), 2);
         Map<String, Object> claims = body.toClaimsMap();
-        assertThat(claims).containsKeys("tokenType", "email", "isVerified", "tier", "maxSubdomainCount");
+        assertThat(claims)
+                .containsKeys("tokenType", "email", "isVerified", "tier", "maxSubdomainCount");
     }
 
     @Test

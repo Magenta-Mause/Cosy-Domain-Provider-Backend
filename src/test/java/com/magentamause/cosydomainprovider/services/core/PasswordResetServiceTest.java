@@ -56,7 +56,10 @@ class PasswordResetServiceTest {
         when(userRepository.findByPasswordResetToken("bad")).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.confirmPasswordReset("bad", "newpass"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test
@@ -68,7 +71,10 @@ class PasswordResetServiceTest {
 
         assertThatThrownBy(() -> service.confirmPasswordReset("tok", "newpass"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test

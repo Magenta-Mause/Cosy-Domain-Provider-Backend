@@ -36,7 +36,9 @@ class AuthorizationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AuthorizationService(jwtUtils, userService, passwordEncoder, subdomainProperties, mfaService);
+        service =
+                new AuthorizationService(
+                        jwtUtils, userService, passwordEncoder, subdomainProperties, mfaService);
     }
 
     private UserEntity user(boolean mfaEnabled) {
@@ -54,10 +56,14 @@ class AuthorizationServiceTest {
 
     @Test
     void loginUser_userNotFound_throwsUnauthorized() {
-        when(userService.getUserByEmail("x@x.com")).thenThrow(UserNotFoundException.byEmail("x@x.com"));
+        when(userService.getUserByEmail("x@x.com"))
+                .thenThrow(UserNotFoundException.byEmail("x@x.com"));
         assertThatThrownBy(() -> service.loginUser("x@x.com", "pass"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
@@ -68,7 +74,10 @@ class AuthorizationServiceTest {
 
         assertThatThrownBy(() -> service.loginUser("alice@example.com", "wrong"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
@@ -79,7 +88,10 @@ class AuthorizationServiceTest {
 
         assertThatThrownBy(() -> service.loginUser("alice@example.com", "pass"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
@@ -115,14 +127,18 @@ class AuthorizationServiceTest {
                 .thenThrow(new SecurityException("invalid"));
         assertThatThrownBy(() -> service.completeMfaChallenge("bad-tok", "123456"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
     void completeMfaChallenge_wrongTotpCode_throws() {
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("u1");
-        when(jwtUtils.getTokenContentBody("tok", JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN)).thenReturn(claims);
+        when(jwtUtils.getTokenContentBody("tok", JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN))
+                .thenReturn(claims);
         UserEntity u = user(true);
         u.setMfaSecret("secret");
         when(userService.getUserByUuid("u1")).thenReturn(u);
@@ -130,14 +146,18 @@ class AuthorizationServiceTest {
 
         assertThatThrownBy(() -> service.completeMfaChallenge("tok", "000000"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
     void completeMfaChallenge_success_returnsRefreshToken() {
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("u1");
-        when(jwtUtils.getTokenContentBody("tok", JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN)).thenReturn(claims);
+        when(jwtUtils.getTokenContentBody("tok", JwtTokenBody.TokenType.MFA_CHALLENGE_TOKEN))
+                .thenReturn(claims);
         UserEntity u = user(true);
         u.setMfaSecret("secret");
         when(userService.getUserByUuid("u1")).thenReturn(u);
@@ -156,14 +176,18 @@ class AuthorizationServiceTest {
                 .thenThrow(new SecurityException("invalid"));
         assertThatThrownBy(() -> service.fetchIdentityTokenFromRefreshToken("bad"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
     void fetchIdentityToken_success() {
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("u1");
-        when(jwtUtils.getTokenContentBody("refresh", JwtTokenBody.TokenType.REFRESH_TOKEN)).thenReturn(claims);
+        when(jwtUtils.getTokenContentBody("refresh", JwtTokenBody.TokenType.REFRESH_TOKEN))
+                .thenReturn(claims);
         UserEntity u = user(false);
         when(userService.getUserByUuid("u1")).thenReturn(u);
         when(subdomainProperties.getMaxPerFreeUser()).thenReturn(1);

@@ -58,8 +58,10 @@ class JwtFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("u1");
-        when(jwtUtils.getTokenContentBody("valid-token", JwtTokenBody.TokenType.IDENTITY_TOKEN)).thenReturn(claims);
-        UserEntity user = UserEntity.builder().uuid("u1").username("alice").email("a@a.com").build();
+        when(jwtUtils.getTokenContentBody("valid-token", JwtTokenBody.TokenType.IDENTITY_TOKEN))
+                .thenReturn(claims);
+        UserEntity user =
+                UserEntity.builder().uuid("u1").username("alice").email("a@a.com").build();
         when(userService.getUserByUuid("u1")).thenReturn(user);
 
         jwtFilter.doFilterInternal(request, response, filterChain);
@@ -83,7 +85,8 @@ class JwtFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("missing");
-        when(jwtUtils.getTokenContentBody("valid-token", JwtTokenBody.TokenType.IDENTITY_TOKEN)).thenReturn(claims);
+        when(jwtUtils.getTokenContentBody("valid-token", JwtTokenBody.TokenType.IDENTITY_TOKEN))
+                .thenReturn(claims);
         when(userService.getUserByUuid("missing"))
                 .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -97,8 +100,10 @@ class JwtFilterTest {
         when(request.getParameter("authToken")).thenReturn("param-token");
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("u1");
-        when(jwtUtils.getTokenContentBody("param-token", JwtTokenBody.TokenType.IDENTITY_TOKEN)).thenReturn(claims);
-        UserEntity user = UserEntity.builder().uuid("u1").username("alice").email("a@a.com").build();
+        when(jwtUtils.getTokenContentBody("param-token", JwtTokenBody.TokenType.IDENTITY_TOKEN))
+                .thenReturn(claims);
+        UserEntity user =
+                UserEntity.builder().uuid("u1").username("alice").email("a@a.com").build();
         when(userService.getUserByUuid("u1")).thenReturn(user);
 
         jwtFilter.doFilterInternal(request, response, filterChain);

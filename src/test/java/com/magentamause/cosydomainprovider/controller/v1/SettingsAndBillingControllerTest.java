@@ -47,7 +47,8 @@ class SettingsAndBillingControllerTest {
         when(securityContextService.getUser()).thenReturn(user);
         when(stripeService.createBillingPortalSession(user)).thenReturn("https://billing.portal");
 
-        BillingController billingController = new BillingController(stripeService, securityContextService);
+        BillingController billingController =
+                new BillingController(stripeService, securityContextService);
         ResponseEntity<BillingPortalResponseDto> resp = billingController.getBillingPortalUrl();
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resp.getBody().getUrl()).isEqualTo("https://billing.portal");
@@ -55,22 +56,39 @@ class SettingsAndBillingControllerTest {
 
     @Test
     void getCheckoutUrl_unverifiedUser_throwsForbidden() {
-        UserEntity user = UserEntity.builder().uuid("u1").username("a").email("a@a.com").isVerified(false).build();
+        UserEntity user =
+                UserEntity.builder()
+                        .uuid("u1")
+                        .username("a")
+                        .email("a@a.com")
+                        .isVerified(false)
+                        .build();
         when(securityContextService.getUser()).thenReturn(user);
 
-        BillingController billingController = new BillingController(stripeService, securityContextService);
+        BillingController billingController =
+                new BillingController(stripeService, securityContextService);
         assertThatThrownBy(() -> billingController.getCheckoutUrl())
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.FORBIDDEN));
     }
 
     @Test
     void getCheckoutUrl_verifiedUser_returnsUrl() {
-        UserEntity user = UserEntity.builder().uuid("u1").username("a").email("a@a.com").isVerified(true).build();
+        UserEntity user =
+                UserEntity.builder()
+                        .uuid("u1")
+                        .username("a")
+                        .email("a@a.com")
+                        .isVerified(true)
+                        .build();
         when(securityContextService.getUser()).thenReturn(user);
         when(stripeService.createCheckoutSession(user)).thenReturn("https://checkout");
 
-        BillingController billingController = new BillingController(stripeService, securityContextService);
+        BillingController billingController =
+                new BillingController(stripeService, securityContextService);
         ResponseEntity<BillingPortalResponseDto> resp = billingController.getCheckoutUrl();
         assertThat(resp.getBody().getUrl()).isEqualTo("https://checkout");
     }

@@ -9,7 +9,6 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
-import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.exception.UserNotFoundException;
 import com.magentamause.cosydomainprovider.repository.OAuthIdentityRepository;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
@@ -260,10 +259,7 @@ class UserServiceTest {
         when(userRepository.save(u)).thenReturn(u);
 
         AdminUserUpdateDto dto =
-                AdminUserUpdateDto.builder()
-                        .username("newname")
-                        .email("new@example.com")
-                        .build();
+                AdminUserUpdateDto.builder().username("newname").email("new@example.com").build();
         UserEntity result = userService.adminUpdateUser("u1", dto);
         assertThat(result.getUsername()).isEqualTo("newname");
         assertThat(result.getEmail()).isEqualTo("new@example.com");

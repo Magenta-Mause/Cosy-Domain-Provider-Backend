@@ -1,7 +1,6 @@
 package com.magentamause.cosydomainprovider.controller.v1;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
@@ -38,13 +37,23 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new UserController(userService, userVerificationService, securityContextService, subdomainProperties);
+        controller =
+                new UserController(
+                        userService,
+                        userVerificationService,
+                        securityContextService,
+                        subdomainProperties);
         when(subdomainProperties.getMaxPerFreeUser()).thenReturn(1);
         when(subdomainProperties.getMaxPerPlusUser()).thenReturn(5);
     }
 
     private UserEntity user() {
-        return UserEntity.builder().uuid("u1").username("alice").email("a@a.com").plan(Plan.FREE).build();
+        return UserEntity.builder()
+                .uuid("u1")
+                .username("alice")
+                .email("a@a.com")
+                .plan(Plan.FREE)
+                .build();
     }
 
     @Test
@@ -59,8 +68,12 @@ class UserControllerTest {
     @Test
     void createUser_returnsOk() {
         UserEntity created = user();
-        UserCreationDto dto = UserCreationDto.builder()
-                .username("alice").email("a@a.com").password("password1").build();
+        UserCreationDto dto =
+                UserCreationDto.builder()
+                        .username("alice")
+                        .email("a@a.com")
+                        .password("password1")
+                        .build();
         when(userService.createUser(dto)).thenReturn(created);
         doNothing().when(userVerificationService).sendInitialVerification(created);
 

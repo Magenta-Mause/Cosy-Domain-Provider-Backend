@@ -39,10 +39,19 @@ class MfaServiceTest {
 
     @Test
     void setupMfa_notVerified_throws() {
-        UserEntity u = UserEntity.builder().uuid("u1").username("x").email("x@x.com").isVerified(false).build();
+        UserEntity u =
+                UserEntity.builder()
+                        .uuid("u1")
+                        .username("x")
+                        .email("x@x.com")
+                        .isVerified(false)
+                        .build();
         assertThatThrownBy(() -> mfaService.setupMfa(u))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.FORBIDDEN));
     }
 
     @Test
@@ -51,7 +60,10 @@ class MfaServiceTest {
         u.setMfaEnabled(true);
         assertThatThrownBy(() -> mfaService.setupMfa(u))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.CONFLICT));
     }
 
     @Test
@@ -72,7 +84,10 @@ class MfaServiceTest {
         u.setMfaSecret(null);
         assertThatThrownBy(() -> mfaService.confirmMfa(u, "123456"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test
@@ -81,7 +96,10 @@ class MfaServiceTest {
         u.setMfaSecret("JBSWY3DPEHPK3PXP");
         assertThatThrownBy(() -> mfaService.confirmMfa(u, "000000"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test

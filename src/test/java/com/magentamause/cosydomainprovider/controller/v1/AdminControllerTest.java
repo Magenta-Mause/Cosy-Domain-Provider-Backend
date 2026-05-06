@@ -41,26 +41,41 @@ class AdminControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new AdminController(adminProperties, subdomainService, userService, globalSettingsService);
+        controller =
+                new AdminController(
+                        adminProperties, subdomainService, userService, globalSettingsService);
         when(adminProperties.getSecretKey()).thenReturn(VALID_KEY);
     }
 
     private UserEntity user() {
-        return UserEntity.builder().uuid("u1").username("alice").email("a@a.com").plan(Plan.FREE).build();
+        return UserEntity.builder()
+                .uuid("u1")
+                .username("alice")
+                .email("a@a.com")
+                .plan(Plan.FREE)
+                .build();
     }
 
     private SubdomainEntity subdomain(UserEntity owner) {
         return SubdomainEntity.builder()
-                .uuid("s1").label("foo").fqdn("foo.example.com")
-                .owner(owner).targetIp("1.2.3.4")
-                .status(SubdomainStatus.ACTIVE).labelMode(LabelMode.RANDOM).build();
+                .uuid("s1")
+                .label("foo")
+                .fqdn("foo.example.com")
+                .owner(owner)
+                .targetIp("1.2.3.4")
+                .status(SubdomainStatus.ACTIVE)
+                .labelMode(LabelMode.RANDOM)
+                .build();
     }
 
     @Test
     void validateKey_invalidKey_throws() {
         assertThatThrownBy(() -> controller.getAllSubdomains("wrong"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
@@ -85,7 +100,8 @@ class AdminControllerTest {
         UserEntity u = user();
         SubdomainUpdateDto dto = SubdomainUpdateDto.builder().targetIp("9.9.9.9").build();
         when(subdomainService.adminUpdateTargetIp("s1", dto)).thenReturn(subdomain(u));
-        ResponseEntity<AdminSubdomainDto> resp = controller.updateSubdomainTargetIp(VALID_KEY, "s1", dto);
+        ResponseEntity<AdminSubdomainDto> resp =
+                controller.updateSubdomainTargetIp(VALID_KEY, "s1", dto);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -149,7 +165,9 @@ class AdminControllerTest {
         UserEntity u = user();
         when(userService.adminSetMaxSubdomainOverride("u1", 10)).thenReturn(u);
         when(userService.computeMaxSubdomainCount(u)).thenReturn(10);
-        ResponseEntity<UserDto> resp = controller.setMaxSubdomainOverride(VALID_KEY, "u1", Map.of("maxSubdomainCountOverride", 10));
+        ResponseEntity<UserDto> resp =
+                controller.setMaxSubdomainOverride(
+                        VALID_KEY, "u1", Map.of("maxSubdomainCountOverride", 10));
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -162,7 +180,8 @@ class AdminControllerTest {
 
     @Test
     void updateSettings_enablesDomainCreation() {
-        ResponseEntity<AdminSettingsDto> resp = controller.updateSettings(VALID_KEY, Map.of("domainCreationEnabled", false));
+        ResponseEntity<AdminSettingsDto> resp =
+                controller.updateSettings(VALID_KEY, Map.of("domainCreationEnabled", false));
         assertThat(resp.getBody().isDomainCreationEnabled()).isFalse();
         verify(globalSettingsService).setDomainCreationEnabled(false);
     }

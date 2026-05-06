@@ -36,7 +36,12 @@ class SubdomainControllerTest {
     }
 
     private UserEntity owner() {
-        return UserEntity.builder().uuid("u1").username("alice").email("a@a.com").isVerified(true).build();
+        return UserEntity.builder()
+                .uuid("u1")
+                .username("alice")
+                .email("a@a.com")
+                .isVerified(true)
+                .build();
     }
 
     private SubdomainEntity subdomain(String label) {
@@ -101,19 +106,26 @@ class SubdomainControllerTest {
 
     @Test
     void createSubdomain_labelTooShort_throws() {
-        SubdomainCreationDto dto = SubdomainCreationDto.builder().label("ab").targetIp("1.2.3.4").build();
+        SubdomainCreationDto dto =
+                SubdomainCreationDto.builder().label("ab").targetIp("1.2.3.4").build();
         assertThatThrownBy(() -> controller.createSubdomain(dto))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test
     void createSubdomain_labelTooLong_throws() {
-        SubdomainCreationDto dto = SubdomainCreationDto.builder()
-                .label("a".repeat(46)).targetIp("1.2.3.4").build();
+        SubdomainCreationDto dto =
+                SubdomainCreationDto.builder().label("a".repeat(46)).targetIp("1.2.3.4").build();
         assertThatThrownBy(() -> controller.createSubdomain(dto))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test

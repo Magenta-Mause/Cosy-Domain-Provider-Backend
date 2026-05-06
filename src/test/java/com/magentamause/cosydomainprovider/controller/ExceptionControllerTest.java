@@ -6,9 +6,11 @@ import static org.mockito.Mockito.*;
 import com.magentamause.cosydomainprovider.model.exception.ApiError;
 import com.magentamause.cosydomainprovider.model.exception.LabelConflictException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -17,9 +19,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-import org.springframework.http.HttpMethod;
-
-import java.util.List;
 
 class ExceptionControllerTest {
 
@@ -90,7 +89,8 @@ class ExceptionControllerTest {
 
     @Test
     void handleNoResourceFound_returns404() {
-        NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/missing", "not found");
+        NoResourceFoundException ex =
+                new NoResourceFoundException(HttpMethod.GET, "/missing", "not found");
         ResponseEntity<ApiError> resp = controller.handleResourceNotFoundException(ex, request);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(resp.getBody().getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");

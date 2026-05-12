@@ -1,10 +1,10 @@
 # Cosy Domain Provider — Backend
 
-Spring Boot REST API for managing `cosy-hosting.net` subdomains. Frontend: `../cosy-domain-provider-frontend`.
+Spring Boot REST API for managing `cosy-hosting.net` subdomains. Frontend: `../Cosy-Domain-Provider-Frontend`.
 
 ## Cross-repo work
 
-If a task touches the frontend, **read `../cosy-domain-provider-frontend/CLAUDE.md` before starting.**
+If a task touches the frontend, **read `../Cosy-Domain-Provider-Frontend/CLAUDE.md` before starting.**
 
 ## Commands
 

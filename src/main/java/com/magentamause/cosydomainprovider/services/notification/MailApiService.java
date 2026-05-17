@@ -29,7 +29,7 @@ public class MailApiService implements MessagingService {
                 .sendEmail(
                         SendMailDto.builder()
                                 .recipient(user.getEmail())
-                                .subject("[ COSY DOMAIN PROVIDER ] Verify Your Account")
+                                .subject("[ COSY DOMAIN PROVIDER ] Verify Your Account - Code " + user.getAccessToken())
                                 .body(body)
                                 .enableHtml(true)
                                 .build())

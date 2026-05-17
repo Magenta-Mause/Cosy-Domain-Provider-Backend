@@ -10,6 +10,9 @@ If a task touches the frontend, **read `../Cosy-Domain-Provider-Frontend/CLAUDE.
 
 ```bash
 mvn spring-boot:run     # Start dev server at localhost:8080 (env vars set via IDE run config)
+                        # Für Systemtest-Runs gegen lokales Backend: Profil `local` aktivieren
+                        # (SPRING_PROFILES_ACTIVE=local oder -Dspring.profiles.active=local) —
+                        # aktiviert STAGING_CAPTCHA_BYPASS_ENABLED über application-local.yaml.
 mvn test                # Run all tests
 mvn verify              # Full build + tests
 mvn compile             # Compile only (fast sanity check)

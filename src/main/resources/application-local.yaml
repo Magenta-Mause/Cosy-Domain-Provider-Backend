@@ -1,0 +1,11 @@
+staging:
+  captcha-bypass:
+    enabled: true
+
+rate-limit:
+  auth:
+    requests: 1000
+    period-seconds: 60
+  global:
+    requests: 10000
+    period-seconds: 60

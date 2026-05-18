@@ -71,7 +71,9 @@ public class StagingAuthFilter extends OncePerRequestFilter {
         if (HttpMethod.POST.matches(request.getMethod())) {
             String[] credentials = resolveBasicCredentials(request);
             if (credentials != null
-                    && credentials[0].equals(properties.username())
+                    && MessageDigest.isEqual(
+                            credentials[0].getBytes(StandardCharsets.UTF_8),
+                            properties.username().getBytes(StandardCharsets.UTF_8))
                     && MessageDigest.isEqual(
                             credentials[1].getBytes(StandardCharsets.UTF_8),
                             properties.password().getBytes(StandardCharsets.UTF_8))) {

@@ -15,6 +15,8 @@ import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.core.GlobalSettingsService;
 import com.magentamause.cosydomainprovider.services.core.SubdomainService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -145,7 +147,9 @@ public class AdminController implements AdminApi {
     }
 
     private void validateKey(String key) {
-        if (!adminProperties.getSecretKey().equals(key)) {
+        if (!MessageDigest.isEqual(
+                adminProperties.getSecretKey().getBytes(StandardCharsets.UTF_8),
+                key.getBytes(StandardCharsets.UTF_8))) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid admin key");
         }
     }

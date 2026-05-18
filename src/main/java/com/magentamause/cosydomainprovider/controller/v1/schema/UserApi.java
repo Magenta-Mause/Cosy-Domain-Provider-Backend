@@ -55,13 +55,13 @@ public interface UserApi {
     @GetMapping("/oauth-identities")
     ResponseEntity<List<OAuthIdentityDto>> getLinkedIdentities();
 
-    @Operation(summary = "Initiate OAuth account linking for the authenticated user")
+    @Operation(summary = "Get OAuth authorization URL for account linking")
     @ApiResponses({
-        @ApiResponse(responseCode = "302", description = "Redirect to provider authorization URL"),
+        @ApiResponse(responseCode = "200", description = "Authorization URL returned"),
         @ApiResponse(responseCode = "400", description = "Unknown provider")
     })
     @GetMapping("/oauth-identities/{provider}/link")
-    ResponseEntity<Void> linkOAuthIdentity(
+    ResponseEntity<String> linkOAuthIdentity(
             @Parameter(description = "OAuth provider name (google, github, discord)") @PathVariable
                     String provider);
 

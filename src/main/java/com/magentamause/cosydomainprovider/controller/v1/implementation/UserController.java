@@ -11,10 +11,8 @@ import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
-import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -60,10 +58,10 @@ public class UserController implements UserApi {
     }
 
     @Override
-    public ResponseEntity<Void> linkOAuthIdentity(String provider) {
+    public ResponseEntity<String> linkOAuthIdentity(String provider) {
         String userId = securityContextService.getUserId();
         String url = oAuthService.buildLinkAuthorizationUrl(provider, userId);
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
+        return ResponseEntity.ok(url);
     }
 
     @Override

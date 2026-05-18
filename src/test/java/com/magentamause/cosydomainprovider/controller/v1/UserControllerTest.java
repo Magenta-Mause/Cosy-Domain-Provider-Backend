@@ -120,16 +120,15 @@ class UserControllerTest {
     }
 
     @Test
-    void linkOAuthIdentity_redirectsToProvider() {
+    void linkOAuthIdentity_returnsAuthorizationUrl() {
         when(securityContextService.getUserId()).thenReturn("u1");
         when(oAuthService.buildLinkAuthorizationUrl("github", "u1"))
                 .thenReturn("https://github.com/login/oauth/authorize?state=link-xyz");
 
-        ResponseEntity<Void> resp = controller.linkOAuthIdentity("github");
+        ResponseEntity<String> resp = controller.linkOAuthIdentity("github");
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FOUND);
-        assertThat(resp.getHeaders().getLocation().toString())
-                .contains("github.com/login/oauth/authorize");
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).contains("github.com/login/oauth/authorize");
     }
 
     @Test

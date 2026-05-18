@@ -39,6 +39,7 @@ class OAuthControllerTest {
         when(oAuthProperties.getFrontendUrl()).thenReturn("http://localhost:5173");
         when(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN))
                 .thenReturn(2_678_400_000L);
+        when(oAuthService.peekLinkedUserId(anyString())).thenReturn(null);
     }
 
     @Test
@@ -57,7 +58,7 @@ class OAuthControllerTest {
     void callback_noMfa_setsCookieAndRedirects() {
         UserEntity user =
                 UserEntity.builder().uuid("u1").username("alice").isMfaEnabled(false).build();
-        when(oAuthService.handleCallback("github", "code123", "state123")).thenReturn(user);
+        when(oAuthService.handleLoginCallback("github", "code123", "state123")).thenReturn(user);
         when(authorizationService.generateRefreshToken("u1")).thenReturn("rt");
 
         ResponseEntity<Void> resp = controller.callback("github", "code123", "state123");
@@ -71,7 +72,7 @@ class OAuthControllerTest {
     void callback_mfaEnabled_redirectsToMfaChallenge() {
         UserEntity user =
                 UserEntity.builder().uuid("u1").username("alice").isMfaEnabled(true).build();
-        when(oAuthService.handleCallback("github", "code123", "state123")).thenReturn(user);
+        when(oAuthService.handleLoginCallback("github", "code123", "state123")).thenReturn(user);
         when(jwtUtils.generateToken(any())).thenReturn("challenge-token");
 
         ResponseEntity<Void> resp = controller.callback("github", "code123", "state123");
@@ -81,17 +82,19 @@ class OAuthControllerTest {
     }
 
     @Test
-    void callback_responseStatusException_rethrows() {
-        when(oAuthService.handleCallback(any(), any(), any()))
+    void callback_responseStatusException_redirectsToLoginWithError() {
+        when(oAuthService.handleLoginCallback(any(), any(), any()))
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid state"));
 
-        assertThatThrownBy(() -> controller.callback("github", "code", "state"))
-                .isInstanceOf(ResponseStatusException.class);
+        ResponseEntity<Void> resp = controller.callback("github", "code", "state");
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(resp.getHeaders().getLocation().toString()).contains("oauthError=true");
     }
 
     @Test
     void callback_unexpectedException_redirectsToLoginWithError() {
-        when(oAuthService.handleCallback(any(), any(), any()))
+        when(oAuthService.handleLoginCallback(any(), any(), any()))
                 .thenThrow(new RuntimeException("unexpected"));
 
         ResponseEntity<Void> resp = controller.callback("github", "code", "state");

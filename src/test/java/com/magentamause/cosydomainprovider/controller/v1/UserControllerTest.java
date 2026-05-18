@@ -3,6 +3,7 @@ package com.magentamause.cosydomainprovider.controller.v1;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
 import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.controller.v1.implementation.UserController;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
@@ -11,6 +12,7 @@ import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
+import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
 import java.util.List;
@@ -32,6 +34,8 @@ class UserControllerTest {
     @Mock private UserVerificationService userVerificationService;
     @Mock private SecurityContextService securityContextService;
     @Mock private SubdomainProperties subdomainProperties;
+    @Mock private OAuthService oAuthService;
+    @Mock private OAuthProperties oAuthProperties;
 
     private UserController controller;
 
@@ -42,7 +46,9 @@ class UserControllerTest {
                         userService,
                         userVerificationService,
                         securityContextService,
-                        subdomainProperties);
+                        subdomainProperties,
+                        oAuthService,
+                        oAuthProperties);
         when(subdomainProperties.getMaxPerFreeUser()).thenReturn(1);
         when(subdomainProperties.getMaxPerPlusUser()).thenReturn(5);
     }

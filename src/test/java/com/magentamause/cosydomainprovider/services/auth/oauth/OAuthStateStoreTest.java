@@ -37,7 +37,7 @@ class OAuthStateStoreTest {
     @Test
     void consumeState_unknownState_returnsFalse() {
         when(repository.findById("unknown")).thenReturn(Optional.empty());
-        assertThat(store.consumeState("unknown")).isFalse();
+        assertThat(store.consumeState("unknown")).isEmpty();
         verify(repository, never()).deleteById(any());
     }
 
@@ -47,7 +47,7 @@ class OAuthStateStoreTest {
                 OAuthStateEntity.builder().state("abc").issuedAt(Instant.now()).build();
         when(repository.findById("abc")).thenReturn(Optional.of(entity));
 
-        assertThat(store.consumeState("abc")).isTrue();
+        assertThat(store.consumeState("abc")).isPresent();
         verify(repository).deleteById("abc");
     }
 
@@ -60,7 +60,7 @@ class OAuthStateStoreTest {
                         .build();
         when(repository.findById("old")).thenReturn(Optional.of(entity));
 
-        assertThat(store.consumeState("old")).isFalse();
+        assertThat(store.consumeState("old")).isEmpty();
         verify(repository).deleteById("old");
     }
 

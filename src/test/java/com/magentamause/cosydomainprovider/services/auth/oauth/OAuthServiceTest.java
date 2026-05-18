@@ -6,9 +6,11 @@ import static org.mockito.Mockito.*;
 
 import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
 import com.magentamause.cosydomainprovider.entity.OAuthIdentityEntity;
+import com.magentamause.cosydomainprovider.entity.OAuthStateEntity;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.repository.OAuthIdentityRepository;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,11 +88,19 @@ class OAuthServiceTest {
                                         .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
-    @Test
-    void handleCallback_invalidState_throwsBadRequest() {
-        when(stateStore.consumeState("bad-state")).thenReturn(false);
+    private OAuthStateEntity loginState() {
+        return OAuthStateEntity.builder()
+                .state("valid-state")
+                .issuedAt(Instant.now())
+                .linkedUserId(null)
+                .build();
+    }
 
-        assertThatThrownBy(() -> service.handleCallback("github", "code123", "bad-state"))
+    @Test
+    void handleLoginCallback_invalidState_throwsBadRequest() {
+        when(stateStore.consumeState("bad-state")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.handleLoginCallback("github", "code123", "bad-state"))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(
                         e ->
@@ -99,7 +109,7 @@ class OAuthServiceTest {
     }
 
     @Test
-    void handleCallback_existingOAuthIdentity_returnsLinkedUser() {
+    void handleLoginCallback_existingOAuthIdentity_returnsLinkedUser() {
         UserEntity user =
                 UserEntity.builder().uuid("u1").username("alice").email("a@a.com").build();
         OAuthIdentityEntity identity =
@@ -109,25 +119,25 @@ class OAuthServiceTest {
                         .providerSubject("gh-123")
                         .build();
 
-        when(stateStore.consumeState("valid-state")).thenReturn(true);
+        when(stateStore.consumeState("valid-state")).thenReturn(Optional.of(loginState()));
         mockTokenExchange("github-access-token");
         when(githubProvider.fetchUserInfo(eq("github-access-token"), any(), any()))
-                .thenReturn(new OAuthUserInfo("gh-123", "alice", "a@a.com"));
+                .thenReturn(new OAuthUserInfo("gh-123", "a@a.com", "alice"));
         when(oAuthIdentityRepository.findByProviderAndProviderSubject("github", "gh-123"))
                 .thenReturn(Optional.of(identity));
 
-        UserEntity result = service.handleCallback("github", "code123", "valid-state");
+        UserEntity result = service.handleLoginCallback("github", "code123", "valid-state");
 
         assertThat(result.getUuid()).isEqualTo("u1");
         verify(oAuthIdentityRepository, never()).save(any());
     }
 
     @Test
-    void handleCallback_newOAuthUser_createsUserAndIdentity() {
-        when(stateStore.consumeState("valid-state")).thenReturn(true);
+    void handleLoginCallback_newOAuthUser_createsUserAndIdentity() {
+        when(stateStore.consumeState("valid-state")).thenReturn(Optional.of(loginState()));
         mockTokenExchange("github-access-token");
         when(githubProvider.fetchUserInfo(eq("github-access-token"), any(), any()))
-                .thenReturn(new OAuthUserInfo("gh-456", "newuser", "new@example.com"));
+                .thenReturn(new OAuthUserInfo("gh-456", "new@example.com", "newuser"));
         when(oAuthIdentityRepository.findByProviderAndProviderSubject("github", "gh-456"))
                 .thenReturn(Optional.empty());
         when(userRepository.findByEmailIgnoreCase("new@example.com")).thenReturn(Optional.empty());
@@ -141,37 +151,40 @@ class OAuthServiceTest {
         when(userRepository.save(any())).thenReturn(created);
         when(oAuthIdentityRepository.save(any())).thenReturn(mock(OAuthIdentityEntity.class));
 
-        UserEntity result = service.handleCallback("github", "code123", "valid-state");
+        UserEntity result = service.handleLoginCallback("github", "code123", "valid-state");
 
         assertThat(result.getUuid()).isEqualTo("u2");
         verify(oAuthIdentityRepository).save(any());
     }
 
     @Test
-    void handleCallback_existingUserByEmail_linksIdentity() {
+    void handleLoginCallback_existingUserByEmail_throwsConflict() {
         UserEntity existingUser =
                 UserEntity.builder().uuid("u3").username("bob").email("bob@example.com").build();
-        when(stateStore.consumeState("valid-state")).thenReturn(true);
+        when(stateStore.consumeState("valid-state")).thenReturn(Optional.of(loginState()));
         mockTokenExchange("github-access-token");
         when(githubProvider.fetchUserInfo(eq("github-access-token"), any(), any()))
-                .thenReturn(new OAuthUserInfo("gh-789", "bob", "bob@example.com"));
+                .thenReturn(new OAuthUserInfo("gh-789", "bob@example.com", "bob"));
         when(oAuthIdentityRepository.findByProviderAndProviderSubject("github", "gh-789"))
                 .thenReturn(Optional.empty());
-        when(userRepository.findByEmailIgnoreCase(anyString()))
+        when(userRepository.findByEmailIgnoreCase("bob@example.com"))
                 .thenReturn(Optional.of(existingUser));
 
-        UserEntity result = service.handleCallback("github", "code123", "valid-state");
-
-        assertThat(result.getUuid()).isEqualTo("u3");
-        verify(oAuthIdentityRepository).save(any());
+        assertThatThrownBy(() -> service.handleLoginCallback("github", "code123", "valid-state"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.CONFLICT));
+        verify(oAuthIdentityRepository, never()).save(any());
     }
 
     @Test
-    void handleCallback_usernameConflict_appendsRandomSuffix() {
-        when(stateStore.consumeState("valid-state")).thenReturn(true);
+    void handleLoginCallback_usernameConflict_appendsRandomSuffix() {
+        when(stateStore.consumeState("valid-state")).thenReturn(Optional.of(loginState()));
         mockTokenExchange("github-access-token");
         when(githubProvider.fetchUserInfo(eq("github-access-token"), any(), any()))
-                .thenReturn(new OAuthUserInfo("gh-999", "alice", "alice2@example.com"));
+                .thenReturn(new OAuthUserInfo("gh-999", "alice2@example.com", "alice"));
         when(oAuthIdentityRepository.findByProviderAndProviderSubject("github", "gh-999"))
                 .thenReturn(Optional.empty());
         when(userRepository.findByEmailIgnoreCase("alice2@example.com"))
@@ -187,7 +200,7 @@ class OAuthServiceTest {
         when(userRepository.save(any())).thenReturn(created);
         when(oAuthIdentityRepository.save(any())).thenReturn(mock(OAuthIdentityEntity.class));
 
-        UserEntity result = service.handleCallback("github", "code123", "valid-state");
+        UserEntity result = service.handleLoginCallback("github", "code123", "valid-state");
 
         assertThat(result.getUuid()).isEqualTo("u4");
     }

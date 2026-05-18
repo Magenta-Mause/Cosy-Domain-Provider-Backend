@@ -3,12 +3,12 @@ package com.magentamause.cosydomainprovider.controller.v1;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
 import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.controller.v1.implementation.UserController;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
+import com.magentamause.cosydomainprovider.model.core.OAuthIdentityDto;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
@@ -35,7 +35,6 @@ class UserControllerTest {
     @Mock private SecurityContextService securityContextService;
     @Mock private SubdomainProperties subdomainProperties;
     @Mock private OAuthService oAuthService;
-    @Mock private OAuthProperties oAuthProperties;
 
     private UserController controller;
 
@@ -47,8 +46,7 @@ class UserControllerTest {
                         userVerificationService,
                         securityContextService,
                         subdomainProperties,
-                        oAuthService,
-                        oAuthProperties);
+                        oAuthService);
         when(subdomainProperties.getMaxPerFreeUser()).thenReturn(1);
         when(subdomainProperties.getMaxPerPlusUser()).thenReturn(5);
     }
@@ -106,5 +104,41 @@ class UserControllerTest {
         ResponseEntity<Void> resp = controller.deleteUser();
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(userService).deleteUserByUuid("u1");
+    }
+
+    @Test
+    void getLinkedIdentities_returnsOk() {
+        List<OAuthIdentityDto> identities =
+                List.of(OAuthIdentityDto.builder().provider("github").email("a@a.com").build());
+        when(securityContextService.getUserId()).thenReturn("u1");
+        when(oAuthService.getLinkedIdentities("u1")).thenReturn(identities);
+
+        ResponseEntity<List<OAuthIdentityDto>> resp = controller.getLinkedIdentities();
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.getBody()).hasSize(1);
+    }
+
+    @Test
+    void linkOAuthIdentity_redirectsToProvider() {
+        when(securityContextService.getUserId()).thenReturn("u1");
+        when(oAuthService.buildLinkAuthorizationUrl("github", "u1"))
+                .thenReturn("https://github.com/login/oauth/authorize?state=link-xyz");
+
+        ResponseEntity<Void> resp = controller.linkOAuthIdentity("github");
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(resp.getHeaders().getLocation().toString())
+                .contains("github.com/login/oauth/authorize");
+    }
+
+    @Test
+    void unlinkOAuthIdentity_returnsNoContent() {
+        when(securityContextService.getUserId()).thenReturn("u1");
+
+        ResponseEntity<Void> resp = controller.unlinkOAuthIdentity("github");
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(oAuthService).unlinkIdentity("github", "u1");
     }
 }

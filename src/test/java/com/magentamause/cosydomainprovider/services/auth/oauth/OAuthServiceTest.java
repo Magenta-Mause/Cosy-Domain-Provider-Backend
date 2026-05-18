@@ -205,6 +205,168 @@ class OAuthServiceTest {
         assertThat(result.getUuid()).isEqualTo("u4");
     }
 
+    private OAuthStateEntity linkState(String userId) {
+        return OAuthStateEntity.builder()
+                .state("valid-state")
+                .issuedAt(Instant.now())
+                .linkedUserId(userId)
+                .build();
+    }
+
+    @Test
+    void buildLinkAuthorizationUrl_containsStateAndParams() {
+        when(stateStore.generateLinkState("u1")).thenReturn("link-state-xyz");
+
+        String url = service.buildLinkAuthorizationUrl("github", "u1");
+
+        assertThat(url)
+                .contains("https://github.com/login/oauth/authorize")
+                .contains("state=link-state-xyz")
+                .contains("client_id=client123");
+    }
+
+    @Test
+    void handleLinkCallback_invalidState_throwsBadRequest() {
+        when(stateStore.consumeState("bad")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.handleLinkCallback("github", "code", "bad"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void handleLinkCallback_loginStatePassedToLinkEndpoint_throwsBadRequest() {
+        when(stateStore.consumeState("login-state")).thenReturn(Optional.of(loginState()));
+
+        assertThatThrownBy(() -> service.handleLinkCallback("github", "code", "login-state"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void handleLinkCallback_alreadyLinked_throwsConflict() {
+        when(stateStore.consumeState("valid-state")).thenReturn(Optional.of(linkState("u1")));
+        mockTokenExchange("github-access-token");
+        when(githubProvider.fetchUserInfo(eq("github-access-token"), any(), any()))
+                .thenReturn(new OAuthUserInfo("gh-100", "a@a.com", "alice"));
+        when(oAuthIdentityRepository.findByProviderAndProviderSubject("github", "gh-100"))
+                .thenReturn(
+                        Optional.of(
+                                mock(
+                                        com.magentamause.cosydomainprovider.entity
+                                                .OAuthIdentityEntity.class)));
+
+        assertThatThrownBy(() -> service.handleLinkCallback("github", "code", "valid-state"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.CONFLICT));
+    }
+
+    @Test
+    void handleLinkCallback_success_savesIdentity() {
+        UserEntity user =
+                UserEntity.builder().uuid("u1").username("alice").email("a@a.com").build();
+        when(stateStore.consumeState("valid-state")).thenReturn(Optional.of(linkState("u1")));
+        mockTokenExchange("github-access-token");
+        when(githubProvider.fetchUserInfo(eq("github-access-token"), any(), any()))
+                .thenReturn(new OAuthUserInfo("gh-200", "a@a.com", "alice"));
+        when(oAuthIdentityRepository.findByProviderAndProviderSubject("github", "gh-200"))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+
+        service.handleLinkCallback("github", "code", "valid-state");
+
+        verify(oAuthIdentityRepository).save(any());
+    }
+
+    @Test
+    void getLinkedIdentities_returnsAllForUser() {
+        com.magentamause.cosydomainprovider.entity.OAuthIdentityEntity identity =
+                com.magentamause.cosydomainprovider.entity.OAuthIdentityEntity.builder()
+                        .provider("github")
+                        .email("a@a.com")
+                        .build();
+        when(oAuthIdentityRepository.findAllByUser_Uuid("u1")).thenReturn(List.of(identity));
+
+        List<com.magentamause.cosydomainprovider.model.core.OAuthIdentityDto> result =
+                service.getLinkedIdentities("u1");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getProvider()).isEqualTo("github");
+    }
+
+    @Test
+    void unlinkIdentity_withPasswordAndMultipleIdentities_succeeds() {
+        UserEntity user =
+                UserEntity.builder()
+                        .uuid("u1")
+                        .username("alice")
+                        .email("a@a.com")
+                        .passwordHash("hash")
+                        .build();
+        com.magentamause.cosydomainprovider.entity.OAuthIdentityEntity identity =
+                com.magentamause.cosydomainprovider.entity.OAuthIdentityEntity.builder()
+                        .provider("github")
+                        .email("a@a.com")
+                        .build();
+        when(oAuthIdentityRepository.findByProviderAndUser_Uuid("github", "u1"))
+                .thenReturn(Optional.of(identity));
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(oAuthIdentityRepository.countByUser_Uuid("u1")).thenReturn(2L);
+
+        service.unlinkIdentity("github", "u1");
+
+        verify(oAuthIdentityRepository).delete(identity);
+    }
+
+    @Test
+    void unlinkIdentity_noPasswordLastIdentity_throwsConflict() {
+        UserEntity user =
+                UserEntity.builder()
+                        .uuid("u1")
+                        .username("alice")
+                        .email("a@a.com")
+                        .passwordHash(null)
+                        .build();
+        com.magentamause.cosydomainprovider.entity.OAuthIdentityEntity identity =
+                com.magentamause.cosydomainprovider.entity.OAuthIdentityEntity.builder()
+                        .provider("github")
+                        .email("a@a.com")
+                        .build();
+        when(oAuthIdentityRepository.findByProviderAndUser_Uuid("github", "u1"))
+                .thenReturn(Optional.of(identity));
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(oAuthIdentityRepository.countByUser_Uuid("u1")).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.unlinkIdentity("github", "u1"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.CONFLICT));
+    }
+
+    @Test
+    void unlinkIdentity_notFound_throwsNotFound() {
+        when(oAuthIdentityRepository.findByProviderAndUser_Uuid("github", "u1"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.unlinkIdentity("github", "u1"))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.NOT_FOUND));
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void mockTokenExchange(String token) {
         WebClient.RequestBodyUriSpec uriSpec = mock(WebClient.RequestBodyUriSpec.class);

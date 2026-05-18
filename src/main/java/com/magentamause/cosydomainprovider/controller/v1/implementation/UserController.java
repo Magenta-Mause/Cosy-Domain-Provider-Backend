@@ -1,6 +1,5 @@
 package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
-import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
 import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.controller.v1.schema.UserApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
@@ -28,7 +27,6 @@ public class UserController implements UserApi {
     private final SecurityContextService securityContextService;
     private final SubdomainProperties subdomainProperties;
     private final OAuthService oAuthService;
-    private final OAuthProperties oAuthProperties;
 
     @Override
     public ResponseEntity<List<UserDto>> getAllUsers() {

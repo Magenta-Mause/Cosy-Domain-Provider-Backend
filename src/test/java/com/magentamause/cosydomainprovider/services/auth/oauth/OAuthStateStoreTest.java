@@ -65,6 +65,40 @@ class OAuthStateStoreTest {
     }
 
     @Test
+    void generateLinkState_savesStateWithLinkedUserId() {
+        when(repository.save(any(OAuthStateEntity.class))).thenAnswer(i -> i.getArgument(0));
+        String state = store.generateLinkState("user-123");
+        assertThat(state).isNotBlank().matches("[0-9a-f-]{36}");
+        verify(repository)
+                .save(
+                        argThat(
+                                e ->
+                                        e instanceof OAuthStateEntity
+                                                && "user-123"
+                                                        .equals(
+                                                                ((OAuthStateEntity) e)
+                                                                        .getLinkedUserId())));
+    }
+
+    @Test
+    void peekLinkedUserId_existingState_returnsLinkedUserId() {
+        OAuthStateEntity entity =
+                OAuthStateEntity.builder()
+                        .state("abc")
+                        .issuedAt(Instant.now())
+                        .linkedUserId("user-42")
+                        .build();
+        when(repository.findById("abc")).thenReturn(Optional.of(entity));
+        assertThat(store.peekLinkedUserId("abc")).isEqualTo("user-42");
+    }
+
+    @Test
+    void peekLinkedUserId_missingState_returnsNull() {
+        when(repository.findById("missing")).thenReturn(Optional.empty());
+        assertThat(store.peekLinkedUserId("missing")).isNull();
+    }
+
+    @Test
     void evictExpired_deletesOldEntries() {
         store.evictExpired();
         verify(repository).deleteExpired(any(Instant.class));

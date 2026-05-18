@@ -102,4 +102,28 @@ class OAuthControllerTest {
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         assertThat(resp.getHeaders().getLocation().toString()).contains("oauthError=true");
     }
+
+    @Test
+    void callback_linkFlow_success_redirectsToSettings() {
+        when(oAuthService.peekLinkedUserId("link-state")).thenReturn("u1");
+        doNothing().when(oAuthService).handleLinkCallback("github", "code123", "link-state");
+
+        ResponseEntity<Void> resp = controller.callback("github", "code123", "link-state");
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(resp.getHeaders().getLocation().toString()).contains("/settings?linked=true");
+    }
+
+    @Test
+    void callback_linkFlow_conflict_redirectsToSettingsWithError() {
+        when(oAuthService.peekLinkedUserId("link-state")).thenReturn("u1");
+        doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "already linked"))
+                .when(oAuthService)
+                .handleLinkCallback("github", "code123", "link-state");
+
+        ResponseEntity<Void> resp = controller.callback("github", "code123", "link-state");
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(resp.getHeaders().getLocation().toString()).contains("/settings?linkError=true");
+    }
 }

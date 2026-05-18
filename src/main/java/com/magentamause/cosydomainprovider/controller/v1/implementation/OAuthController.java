@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestController
@@ -39,7 +38,23 @@ public class OAuthController implements OAuthApi {
     @Override
     public ResponseEntity<Void> callback(String provider, String code, String state) {
         try {
-            UserEntity user = oAuthService.handleCallback(provider, code, state);
+            String linkedUserId = oAuthService.peekLinkedUserId(state);
+            if (linkedUserId != null) {
+                return handleLinkCallback(provider, code, state);
+            }
+            return handleLoginCallback(provider, code, state);
+        } catch (Exception e) {
+            log.error("OAuth callback failed for provider {}", provider, e);
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(
+                            URI.create(oAuthProperties.getFrontendUrl() + "/login?oauthError=true"))
+                    .build();
+        }
+    }
+
+    private ResponseEntity<Void> handleLoginCallback(String provider, String code, String state) {
+        try {
+            UserEntity user = oAuthService.handleLoginCallback(provider, code, state);
 
             if (user.isMfaEnabled()) {
                 String challengeToken =
@@ -54,7 +69,6 @@ public class OAuthController implements OAuthApi {
             }
 
             String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
-
             ResponseCookie cookie =
                     ResponseCookie.from("refreshToken", refreshToken)
                             .httpOnly(true)
@@ -71,13 +85,32 @@ public class OAuthController implements OAuthApi {
                     .header(HttpHeaders.SET_COOKIE, cookie.toString())
                     .location(URI.create(oAuthProperties.getFrontendUrl() + "/dashboard"))
                     .build();
-        } catch (ResponseStatusException e) {
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            if (e.getStatusCode() == HttpStatus.CONFLICT) {
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(
+                                URI.create(
+                                        oAuthProperties.getFrontendUrl()
+                                                + "/login?oauthError=emailTaken"))
+                        .build();
+            }
             throw e;
-        } catch (Exception e) {
-            log.error("OAuth callback failed for provider {}", provider, e);
+        }
+    }
+
+    private ResponseEntity<Void> handleLinkCallback(String provider, String code, String state) {
+        try {
+            oAuthService.handleLinkCallback(provider, code, state);
             return ResponseEntity.status(HttpStatus.FOUND)
                     .location(
-                            URI.create(oAuthProperties.getFrontendUrl() + "/login?oauthError=true"))
+                            URI.create(oAuthProperties.getFrontendUrl() + "/settings?linked=true"))
+                    .build();
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            log.warn("OAuth link failed for provider {}: {}", provider, e.getReason());
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(
+                            URI.create(
+                                    oAuthProperties.getFrontendUrl() + "/settings?linkError=true"))
                     .build();
         }
     }

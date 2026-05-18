@@ -22,4 +22,7 @@ public class OAuthStateEntity {
 
     @Column(nullable = false, updatable = false)
     private Instant issuedAt;
+
+    @Column(nullable = true, updatable = false)
+    private String linkedUserId;
 }

@@ -19,20 +19,40 @@ class OAuthStateStore {
     private final OAuthStateRepository oAuthStateRepository;
 
     String generateState() {
+        return saveState(null);
+    }
+
+    String generateLinkState(String userId) {
+        return saveState(userId);
+    }
+
+    private String saveState(String linkedUserId) {
         String state = UUID.randomUUID().toString();
         oAuthStateRepository.save(
-                OAuthStateEntity.builder().state(state).issuedAt(Instant.now()).build());
+                OAuthStateEntity.builder()
+                        .state(state)
+                        .issuedAt(Instant.now())
+                        .linkedUserId(linkedUserId)
+                        .build());
         return state;
     }
 
     @Transactional
-    boolean consumeState(String state) {
+    Optional<OAuthStateEntity> consumeState(String state) {
         Optional<OAuthStateEntity> entity = oAuthStateRepository.findById(state);
         if (entity.isEmpty()) {
-            return false;
+            return Optional.empty();
         }
         oAuthStateRepository.deleteById(state);
-        return entity.get().getIssuedAt().plusMillis(STATE_TTL_MS).isAfter(Instant.now());
+        boolean valid = entity.get().getIssuedAt().plusMillis(STATE_TTL_MS).isAfter(Instant.now());
+        return valid ? entity : Optional.empty();
+    }
+
+    String peekLinkedUserId(String state) {
+        return oAuthStateRepository
+                .findById(state)
+                .map(OAuthStateEntity::getLinkedUserId)
+                .orElse(null);
     }
 
     @Scheduled(fixedRateString = "PT10M")

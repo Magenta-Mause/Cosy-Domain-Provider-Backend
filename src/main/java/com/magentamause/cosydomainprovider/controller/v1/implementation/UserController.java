@@ -1,16 +1,21 @@
 package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
+import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
 import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.controller.v1.schema.UserApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
 import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
+import com.magentamause.cosydomainprovider.model.core.OAuthIdentityDto;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
+import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
+import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +27,8 @@ public class UserController implements UserApi {
     private final UserVerificationService userVerificationService;
     private final SecurityContextService securityContextService;
     private final SubdomainProperties subdomainProperties;
+    private final OAuthService oAuthService;
+    private final OAuthProperties oAuthProperties;
 
     @Override
     public ResponseEntity<List<UserDto>> getAllUsers() {
@@ -45,6 +52,26 @@ public class UserController implements UserApi {
     public ResponseEntity<Void> deleteUser() {
         String userId = securityContextService.getUserId();
         userService.deleteUserByUuid(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<List<OAuthIdentityDto>> getLinkedIdentities() {
+        String userId = securityContextService.getUserId();
+        return ResponseEntity.ok(oAuthService.getLinkedIdentities(userId));
+    }
+
+    @Override
+    public ResponseEntity<Void> linkOAuthIdentity(String provider) {
+        String userId = securityContextService.getUserId();
+        String url = oAuthService.buildLinkAuthorizationUrl(provider, userId);
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
+    }
+
+    @Override
+    public ResponseEntity<Void> unlinkOAuthIdentity(String provider) {
+        String userId = securityContextService.getUserId();
+        oAuthService.unlinkIdentity(provider, userId);
         return ResponseEntity.noContent().build();
     }
 

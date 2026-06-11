@@ -1,6 +1,7 @@
 package com.magentamause.cosydomainprovider.metrics;
 
 import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
+import com.magentamause.cosydomainprovider.configuration.web.FrontendProperties;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.repository.OAuthIdentityRepository;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
@@ -11,7 +12,6 @@ import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -25,10 +25,8 @@ public class ApplicationMetricsService {
     private final SubdomainRepository subdomainRepository;
     private final OAuthIdentityRepository oAuthIdentityRepository;
     private final OAuthProperties oAuthProperties;
+    private final FrontendProperties frontendProperties;
     private final WebClient.Builder webClientBuilder;
-
-    @Value("${frontend.url}")
-    private String frontendUrl;
 
     private final AtomicInteger frontendUp = new AtomicInteger(0);
 
@@ -88,7 +86,7 @@ public class ApplicationMetricsService {
             webClientBuilder
                     .build()
                     .get()
-                    .uri(frontendUrl)
+                    .uri(frontendProperties.getUrl())
                     .retrieve()
                     .toBodilessEntity()
                     .timeout(Duration.ofSeconds(5))

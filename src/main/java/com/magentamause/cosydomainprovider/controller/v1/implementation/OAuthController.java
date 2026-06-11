@@ -1,11 +1,12 @@
 package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
-import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
+import com.magentamause.cosydomainprovider.configuration.web.FrontendProperties;
 import com.magentamause.cosydomainprovider.controller.v1.schema.OAuthApi;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
+import com.magentamause.cosydomainprovider.services.auth.RefreshCookieFactory;
 import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -15,18 +16,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class OAuthController implements OAuthApi {
 
-    private static final int MILLISECONDS_IN_SECOND = 1000;
-    private static final String REFRESH_COOKIE_PATH = "/api/v1/auth/token";
-
     private final OAuthService oAuthService;
     private final AuthorizationService authorizationService;
-    private final OAuthProperties oAuthProperties;
+    private final FrontendProperties frontendProperties;
+    private final RefreshCookieFactory refreshCookieFactory;
     private final JwtUtils jwtUtils;
 
     @Override
@@ -46,8 +46,7 @@ public class OAuthController implements OAuthApi {
         } catch (Exception e) {
             log.error("OAuth callback failed for provider {}", provider, e);
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(
-                            URI.create(oAuthProperties.getFrontendUrl() + "/login?oauthError=true"))
+                    .location(URI.create(frontendProperties.getUrl() + "/login?oauthError=true"))
                     .build();
         }
     }
@@ -62,7 +61,7 @@ public class OAuthController implements OAuthApi {
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(
                                 URI.create(
-                                        oAuthProperties.getFrontendUrl()
+                                        frontendProperties.getUrl()
                                                 + "/mfa-challenge?token="
                                                 + challengeToken))
                         .build();
@@ -70,27 +69,18 @@ public class OAuthController implements OAuthApi {
 
             String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
             ResponseCookie cookie =
-                    ResponseCookie.from("refreshToken", refreshToken)
-                            .httpOnly(true)
-                            .secure(oAuthProperties.isSecureCookie())
-                            .maxAge(
-                                    jwtUtils.getTokenValidityDuration(
-                                                    JwtTokenBody.TokenType.REFRESH_TOKEN)
-                                            / MILLISECONDS_IN_SECOND)
-                            .path(REFRESH_COOKIE_PATH)
-                            .sameSite("Lax")
-                            .build();
+                    refreshCookieFactory.create(refreshToken, RefreshCookieFactory.SAME_SITE_LAX);
 
             return ResponseEntity.status(HttpStatus.FOUND)
                     .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                    .location(URI.create(oAuthProperties.getFrontendUrl() + "/dashboard"))
+                    .location(URI.create(frontendProperties.getUrl() + "/dashboard"))
                     .build();
-        } catch (org.springframework.web.server.ResponseStatusException e) {
+        } catch (ResponseStatusException e) {
             if (e.getStatusCode() == HttpStatus.CONFLICT) {
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(
                                 URI.create(
-                                        oAuthProperties.getFrontendUrl()
+                                        frontendProperties.getUrl()
                                                 + "/login?oauthError=emailTaken"))
                         .build();
             }
@@ -102,15 +92,12 @@ public class OAuthController implements OAuthApi {
         try {
             oAuthService.handleLinkCallback(provider, code, state);
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(
-                            URI.create(oAuthProperties.getFrontendUrl() + "/settings?linked=true"))
+                    .location(URI.create(frontendProperties.getUrl() + "/settings?linked=true"))
                     .build();
-        } catch (org.springframework.web.server.ResponseStatusException e) {
+        } catch (ResponseStatusException e) {
             log.warn("OAuth link failed for provider {}: {}", provider, e.getReason());
             return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(
-                            URI.create(
-                                    oAuthProperties.getFrontendUrl() + "/settings?linkError=true"))
+                    .location(URI.create(frontendProperties.getUrl() + "/settings?linkError=true"))
                     .build();
         }
     }

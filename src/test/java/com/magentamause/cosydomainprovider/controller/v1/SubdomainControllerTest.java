@@ -20,7 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class SubdomainControllerTest {
@@ -102,30 +101,6 @@ class SubdomainControllerTest {
 
         ResponseEntity<SubdomainDto> resp = controller.createSubdomain(dto);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-    }
-
-    @Test
-    void createSubdomain_labelTooShort_throws() {
-        SubdomainCreationDto dto =
-                SubdomainCreationDto.builder().label("ab").targetIp("1.2.3.4").build();
-        assertThatThrownBy(() -> controller.createSubdomain(dto))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(
-                        e ->
-                                assertThat(((ResponseStatusException) e).getStatusCode())
-                                        .isEqualTo(HttpStatus.BAD_REQUEST));
-    }
-
-    @Test
-    void createSubdomain_labelTooLong_throws() {
-        SubdomainCreationDto dto =
-                SubdomainCreationDto.builder().label("a".repeat(46)).targetIp("1.2.3.4").build();
-        assertThatThrownBy(() -> controller.createSubdomain(dto))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(
-                        e ->
-                                assertThat(((ResponseStatusException) e).getStatusCode())
-                                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test

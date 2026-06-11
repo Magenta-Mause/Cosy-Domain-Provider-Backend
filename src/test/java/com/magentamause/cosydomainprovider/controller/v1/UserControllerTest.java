@@ -7,14 +7,12 @@ import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProp
 import com.magentamause.cosydomainprovider.controller.v1.implementation.UserController;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.UpdateUserDto;
-import com.magentamause.cosydomainprovider.model.action.UserCreationDto;
 import com.magentamause.cosydomainprovider.model.core.OAuthIdentityDto;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
-import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +29,6 @@ import org.springframework.http.ResponseEntity;
 class UserControllerTest {
 
     @Mock private UserService userService;
-    @Mock private UserVerificationService userVerificationService;
     @Mock private SecurityContextService securityContextService;
     @Mock private SubdomainProperties subdomainProperties;
     @Mock private OAuthService oAuthService;
@@ -42,11 +39,7 @@ class UserControllerTest {
     void setUp() {
         controller =
                 new UserController(
-                        userService,
-                        userVerificationService,
-                        securityContextService,
-                        subdomainProperties,
-                        oAuthService);
+                        userService, securityContextService, subdomainProperties, oAuthService);
         when(subdomainProperties.getMaxPerFreeUser()).thenReturn(1);
         when(subdomainProperties.getMaxPerPlusUser()).thenReturn(5);
     }
@@ -58,32 +51,6 @@ class UserControllerTest {
                 .email("a@a.com")
                 .plan(Plan.FREE)
                 .build();
-    }
-
-    @Test
-    void getAllUsers_returnsList() {
-        List<UserEntity> users = List.of(user(), user());
-        when(userService.getAllUsers()).thenReturn(users);
-        ResponseEntity<List<UserDto>> resp = controller.getAllUsers();
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(resp.getBody()).hasSize(2);
-    }
-
-    @Test
-    void createUser_returnsOk() {
-        UserEntity created = user();
-        UserCreationDto dto =
-                UserCreationDto.builder()
-                        .username("alice")
-                        .email("a@a.com")
-                        .password("password1")
-                        .build();
-        when(userService.createUser(dto)).thenReturn(created);
-        doNothing().when(userVerificationService).sendInitialVerification(created);
-
-        ResponseEntity<UserDto> resp = controller.createUser(dto);
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(userVerificationService).sendInitialVerification(created);
     }
 
     @Test

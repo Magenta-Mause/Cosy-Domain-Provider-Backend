@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.exception.UserNotFoundException;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -39,7 +40,6 @@ class JwtFilterTest {
     @Test
     void noToken_passesThrough() throws Exception {
         when(request.getHeader("Authorization")).thenReturn(null);
-        when(request.getParameter("authToken")).thenReturn(null);
 
         jwtFilter.doFilterInternal(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
@@ -95,18 +95,26 @@ class JwtFilterTest {
     }
 
     @Test
-    void tokenFromQueryParam_setsAuthentication() throws Exception {
+    void tokenFromQueryParam_isIgnored() throws Exception {
         when(request.getHeader("Authorization")).thenReturn(null);
-        when(request.getParameter("authToken")).thenReturn("param-token");
-        Claims claims = mock(Claims.class);
-        when(claims.getSubject()).thenReturn("u1");
-        when(jwtUtils.getTokenContentBody("param-token", JwtTokenBody.TokenType.IDENTITY_TOKEN))
-                .thenReturn(claims);
-        UserEntity user =
-                UserEntity.builder().uuid("u1").username("alice").email("a@a.com").build();
-        when(userService.getUserByUuid("u1")).thenReturn(user);
 
         jwtFilter.doFilterInternal(request, response, filterChain);
         verify(filterChain).doFilter(request, response);
+        verify(request, never()).getParameter("authToken");
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void validTokenButUserDeleted_sends401() throws Exception {
+        when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("gone");
+        when(jwtUtils.getTokenContentBody("valid-token", JwtTokenBody.TokenType.IDENTITY_TOKEN))
+                .thenReturn(claims);
+        when(userService.getUserByUuid("gone")).thenThrow(UserNotFoundException.byId("gone"));
+
+        jwtFilter.doFilterInternal(request, response, filterChain);
+        verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
+        verify(filterChain, never()).doFilter(any(), any());
     }
 }

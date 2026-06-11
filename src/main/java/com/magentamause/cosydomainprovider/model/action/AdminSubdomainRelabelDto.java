@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AdminSubdomainRelabelDto {
     @NotBlank
-    @Size(min = 3, max = 45)
+    @Size(min = 3, max = 63)
     @Pattern(
             regexp = "^[a-z0-9-]+$",
             message = "label must only contain lowercase letters, digits, and hyphens")

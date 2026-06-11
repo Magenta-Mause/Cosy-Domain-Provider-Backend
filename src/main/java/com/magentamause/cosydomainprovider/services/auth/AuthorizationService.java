@@ -3,6 +3,7 @@ package com.magentamause.cosydomainprovider.services.auth;
 import com.magentamause.cosydomainprovider.configuration.subdomain.SubdomainProperties;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
+import com.magentamause.cosydomainprovider.model.exception.UserNotFoundException;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.core.MfaService;
@@ -28,7 +29,7 @@ public class AuthorizationService {
         UserEntity user;
         try {
             user = userService.getUserByEmail(email);
-        } catch (Exception e) {
+        } catch (UserNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
         if (user.getPasswordHash() == null

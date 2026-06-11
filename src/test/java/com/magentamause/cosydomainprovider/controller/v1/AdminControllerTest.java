@@ -4,10 +4,11 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.magentamause.cosydomainprovider.configuration.admin.AdminProperties;
 import com.magentamause.cosydomainprovider.controller.v1.implementation.AdminController;
 import com.magentamause.cosydomainprovider.entity.SubdomainEntity;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.action.AdminMaxSubdomainOverrideDto;
+import com.magentamause.cosydomainprovider.model.action.AdminSettingsUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.AdminSubdomainRelabelDto;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
@@ -17,7 +18,6 @@ import com.magentamause.cosydomainprovider.services.core.GlobalSettingsService;
 import com.magentamause.cosydomainprovider.services.core.SubdomainService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,12 +25,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class AdminControllerTest {
 
-    @Mock private AdminProperties adminProperties;
     @Mock private SubdomainService subdomainService;
     @Mock private UserService userService;
     @Mock private GlobalSettingsService globalSettingsService;
@@ -41,10 +39,7 @@ class AdminControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller =
-                new AdminController(
-                        adminProperties, subdomainService, userService, globalSettingsService);
-        when(adminProperties.getSecretKey()).thenReturn(VALID_KEY);
+        controller = new AdminController(subdomainService, userService, globalSettingsService);
     }
 
     private UserEntity user() {
@@ -66,16 +61,6 @@ class AdminControllerTest {
                 .status(SubdomainStatus.ACTIVE)
                 .labelMode(LabelMode.RANDOM)
                 .build();
-    }
-
-    @Test
-    void validateKey_invalidKey_throws() {
-        assertThatThrownBy(() -> controller.getAllSubdomains("wrong"))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(
-                        e ->
-                                assertThat(((ResponseStatusException) e).getStatusCode())
-                                        .isEqualTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
@@ -119,7 +104,7 @@ class AdminControllerTest {
     void deleteSubdomain_returnsNoContent() {
         ResponseEntity<Void> resp = controller.deleteSubdomain(VALID_KEY, "s1");
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(subdomainService).deleteSubdomain("s1");
+        verify(subdomainService).adminDeleteSubdomain("s1");
     }
 
     @Test
@@ -167,7 +152,11 @@ class AdminControllerTest {
         when(userService.computeMaxSubdomainCount(u)).thenReturn(10);
         ResponseEntity<UserDto> resp =
                 controller.setMaxSubdomainOverride(
-                        VALID_KEY, "u1", Map.of("maxSubdomainCountOverride", 10));
+                        VALID_KEY,
+                        "u1",
+                        AdminMaxSubdomainOverrideDto.builder()
+                                .maxSubdomainCountOverride(10)
+                                .build());
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -179,16 +168,12 @@ class AdminControllerTest {
     }
 
     @Test
-    void updateSettings_enablesDomainCreation() {
+    void updateSettings_disablesDomainCreation() {
         ResponseEntity<AdminSettingsDto> resp =
-                controller.updateSettings(VALID_KEY, Map.of("domainCreationEnabled", false));
+                controller.updateSettings(
+                        VALID_KEY,
+                        AdminSettingsUpdateDto.builder().domainCreationEnabled(false).build());
         assertThat(resp.getBody().isDomainCreationEnabled()).isFalse();
         verify(globalSettingsService).setDomainCreationEnabled(false);
-    }
-
-    @Test
-    void updateSettings_defaultsToTrue_whenKeyMissing() {
-        ResponseEntity<AdminSettingsDto> resp = controller.updateSettings(VALID_KEY, Map.of());
-        assertThat(resp.getBody().isDomainCreationEnabled()).isTrue();
     }
 }

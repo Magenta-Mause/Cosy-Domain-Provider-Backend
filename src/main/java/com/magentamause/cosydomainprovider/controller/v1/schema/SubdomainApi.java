@@ -46,8 +46,9 @@ public interface SubdomainApi {
     @Operation(summary = "Get a specific subdomain owned by the authenticated user")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Subdomain returned"),
-        @ApiResponse(responseCode = "403", description = "Not owned by the current user"),
-        @ApiResponse(responseCode = "404", description = "Subdomain not found")
+        @ApiResponse(
+                responseCode = "404",
+                description = "Subdomain not found or not owned by the current user")
     })
     @GetMapping("/{uuid}")
     ResponseEntity<SubdomainDto> getSubdomain(
@@ -56,9 +57,9 @@ public interface SubdomainApi {
     @Operation(summary = "Create a new subdomain")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Subdomain created"),
-        @ApiResponse(responseCode = "400", description = "Label reserved or invalid"),
-        @ApiResponse(responseCode = "409", description = "Label already taken"),
-        @ApiResponse(responseCode = "429", description = "Subdomain limit reached for this plan")
+        @ApiResponse(responseCode = "400", description = "Label invalid"),
+        @ApiResponse(responseCode = "403", description = "Subdomain limit reached for this plan"),
+        @ApiResponse(responseCode = "409", description = "Label reserved or already taken")
     })
     @PostMapping
     ResponseEntity<SubdomainDto> createSubdomain(
@@ -67,8 +68,9 @@ public interface SubdomainApi {
     @Operation(summary = "Update the target IP of a subdomain")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Subdomain updated"),
-        @ApiResponse(responseCode = "403", description = "Not owned by the current user"),
-        @ApiResponse(responseCode = "404", description = "Subdomain not found")
+        @ApiResponse(
+                responseCode = "404",
+                description = "Subdomain not found or not owned by the current user")
     })
     @PutMapping("/{uuid}")
     ResponseEntity<SubdomainDto> updateSubdomain(
@@ -78,8 +80,9 @@ public interface SubdomainApi {
     @Operation(summary = "Delete a subdomain and its DNS record")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Subdomain deleted"),
-        @ApiResponse(responseCode = "403", description = "Not owned by the current user"),
-        @ApiResponse(responseCode = "404", description = "Subdomain not found")
+        @ApiResponse(
+                responseCode = "404",
+                description = "Subdomain not found or not owned by the current user")
     })
     @DeleteMapping("/{uuid}")
     ResponseEntity<Void> deleteSubdomain(

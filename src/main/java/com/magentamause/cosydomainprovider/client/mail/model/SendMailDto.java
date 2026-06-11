@@ -6,8 +6,8 @@ import lombok.Data;
 @Data
 @Builder
 public class SendMailDto {
-    public String recipient;
-    public String subject;
-    public String body;
-    public boolean enableHtml;
+    private String recipient;
+    private String subject;
+    private String body;
+    private boolean enableHtml;
 }

@@ -25,7 +25,8 @@ public class UserVerificationService {
     private final UserRepository userRepository;
     private final MessagingService messagingService;
 
-    public void sendInitialVerification(UserEntity user) {
+    /** Generates and stores a verification token without sending an email. */
+    public void issueVerificationToken(UserEntity user) {
         user.setAccessToken(generateAccessToken());
         user.setAccessTokenExpiresAt(Instant.now().plus(3, ChronoUnit.HOURS));
         userRepository.save(user);

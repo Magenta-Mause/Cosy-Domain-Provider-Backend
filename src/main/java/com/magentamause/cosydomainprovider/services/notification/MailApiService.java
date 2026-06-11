@@ -2,10 +2,10 @@ package com.magentamause.cosydomainprovider.services.notification;
 
 import com.magentamause.cosydomainprovider.client.MailApiClient;
 import com.magentamause.cosydomainprovider.client.mail.model.SendMailDto;
+import com.magentamause.cosydomainprovider.configuration.web.FrontendProperties;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -15,13 +15,11 @@ public class MailApiService implements MessagingService {
 
     private final MailApiClient mailApiClient;
     private final EmailTemplateService emailTemplateService;
-
-    @Value("${frontend.url}")
-    private String frontendUrl;
+    private final FrontendProperties frontendProperties;
 
     @Override
     public void sendUserAccessToken(UserEntity user) {
-        String verifyLink = frontendUrl + "/verify?token=" + user.getAccessToken();
+        String verifyLink = frontendProperties.getUrl() + "/verify?token=" + user.getAccessToken();
         String body =
                 emailTemplateService.renderVerificationEmail(
                         user.getUsername(), user.getAccessToken(), verifyLink);
@@ -55,7 +53,7 @@ public class MailApiService implements MessagingService {
 
     @Override
     public void sendPasswordResetEmail(UserEntity user, String resetToken) {
-        String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
+        String resetLink = frontendProperties.getUrl() + "/reset-password?token=" + resetToken;
         String body = emailTemplateService.renderPasswordResetEmail(user.getUsername(), resetLink);
         mailApiClient
                 .sendEmail(

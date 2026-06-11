@@ -1,6 +1,7 @@
 package com.magentamause.cosydomainprovider.security.jwtfilter;
 
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.exception.UserNotFoundException;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -28,7 +29,7 @@ public class JwtFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             return header.substring(7);
         }
-        return request.getParameter("authToken");
+        return null;
     }
 
     @Override
@@ -54,7 +55,7 @@ public class JwtFilter extends OncePerRequestFilter {
         UserEntity userEntity;
         try {
             userEntity = userService.getUserByUuid(subject);
-        } catch (ResponseStatusException e) {
+        } catch (UserNotFoundException | ResponseStatusException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
             return;
         }

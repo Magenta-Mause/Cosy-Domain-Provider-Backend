@@ -5,13 +5,13 @@ import static org.mockito.Mockito.*;
 
 import com.magentamause.cosydomainprovider.client.MailApiClient;
 import com.magentamause.cosydomainprovider.client.mail.model.MailEntityResponse;
+import com.magentamause.cosydomainprovider.configuration.web.FrontendProperties;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,8 +24,9 @@ class MailApiServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new MailApiService(mailApiClient, emailTemplateService);
-        ReflectionTestUtils.setField(service, "frontendUrl", "http://localhost:5173");
+        FrontendProperties frontendProperties = new FrontendProperties();
+        frontendProperties.setUrl("http://localhost:5173");
+        service = new MailApiService(mailApiClient, emailTemplateService, frontendProperties);
     }
 
     private UserEntity user() {

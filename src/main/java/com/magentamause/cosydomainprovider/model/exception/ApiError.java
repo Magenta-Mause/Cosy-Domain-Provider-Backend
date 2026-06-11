@@ -1,6 +1,6 @@
 package com.magentamause.cosydomainprovider.model.exception;
 
-import java.util.Date;
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,5 +11,5 @@ public class ApiError {
     private final int statusCode;
     private final String errorCode;
     private final String path;
-    private final Date timestamp;
+    private final Instant timestamp;
 }

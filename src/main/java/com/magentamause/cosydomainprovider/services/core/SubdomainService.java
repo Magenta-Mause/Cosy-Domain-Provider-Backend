@@ -36,6 +36,9 @@ import software.amazon.awssdk.services.route53.model.InvalidChangeBatchException
 public class SubdomainService {
 
     private static final int MAX_LABEL_ATTEMPTS = 25;
+    private static final int MIN_LABEL_LENGTH = 3;
+    private static final int MAX_LABEL_LENGTH = 63;
+    private static final String LABEL_PATTERN = "[a-z0-9-]+";
     private static final String VERB_UPDATED = "Updated";
     private static final String VERB_CREATED = "Created";
     private static final String VERB_RELABELED = "Relabeled";
@@ -122,31 +125,10 @@ public class SubdomainService {
     }
 
     public SubdomainEntity updateTargetIp(String uuid, SubdomainUpdateDto dto, UserEntity owner) {
-        SubdomainEntity entity = getOwnedSubdomain(uuid, owner);
-        entity.setTargetIp(dto.getTargetIp());
-        entity.setTargetIpv6(dto.getTargetIpv6());
-        entity.setStatus(SubdomainStatus.PENDING);
-        entity = subdomainRepository.save(entity);
-        entity =
-                syncDnsRecord(
-                        entity,
-                        dto.getTargetIp(),
-                        DnsRecordType.A,
-                        VERB_UPDATED,
-                        owner.getUuid(),
-                        route53Service::upsertARecord);
-        entity =
-                syncDnsRecord(
-                        entity,
-                        dto.getTargetIpv6(),
-                        DnsRecordType.AAAA,
-                        VERB_UPDATED,
-                        owner.getUuid(),
-                        route53Service::upsertAAAARecord);
-        return entity;
+        return applyTargetIpUpdate(getOwnedSubdomain(uuid, owner), dto, owner.getUuid());
     }
 
-    public void deleteSubdomain(String uuid) {
+    public void adminDeleteSubdomain(String uuid) {
         SubdomainEntity entity =
                 subdomainRepository
                         .findById(uuid)
@@ -160,8 +142,15 @@ public class SubdomainService {
 
     public LabelAvailabilityDto checkLabelAvailability(String label) {
         String normalized = label.toLowerCase(Locale.ROOT);
-        if (normalized.length() < 3) {
+        if (normalized.length() < MIN_LABEL_LENGTH) {
             return LabelAvailabilityDto.unavailable("too short");
+        }
+        if (normalized.length() > MAX_LABEL_LENGTH) {
+            return LabelAvailabilityDto.unavailable("too long");
+        }
+        if (!normalized.matches(LABEL_PATTERN)) {
+            return LabelAvailabilityDto.unavailable(
+                    "must only contain lowercase letters, digits, and hyphens");
         }
         try {
             validateLabel(normalized);
@@ -198,17 +187,26 @@ public class SubdomainService {
                 subdomainRepository
                         .findById(uuid)
                         .orElseThrow(() -> new SubdomainNotFoundException(uuid));
+        return applyTargetIpUpdate(entity, dto, ACTOR_ADMIN);
+    }
+
+    private SubdomainEntity applyTargetIpUpdate(
+            SubdomainEntity entity, SubdomainUpdateDto dto, Object actor) {
+        String oldIp = entity.getTargetIp();
+        String oldIpv6 = entity.getTargetIpv6();
         entity.setTargetIp(dto.getTargetIp());
         entity.setTargetIpv6(dto.getTargetIpv6());
         entity.setStatus(SubdomainStatus.PENDING);
         entity = subdomainRepository.save(entity);
+        entity = removeClearedDnsRecord(entity, oldIp, dto.getTargetIp(), DnsRecordType.A);
+        entity = removeClearedDnsRecord(entity, oldIpv6, dto.getTargetIpv6(), DnsRecordType.AAAA);
         entity =
                 syncDnsRecord(
                         entity,
                         dto.getTargetIp(),
                         DnsRecordType.A,
                         VERB_UPDATED,
-                        ACTOR_ADMIN,
+                        actor,
                         route53Service::upsertARecord);
         entity =
                 syncDnsRecord(
@@ -216,8 +214,30 @@ public class SubdomainService {
                         dto.getTargetIpv6(),
                         DnsRecordType.AAAA,
                         VERB_UPDATED,
-                        ACTOR_ADMIN,
+                        actor,
                         route53Service::upsertAAAARecord);
+        return entity;
+    }
+
+    private SubdomainEntity removeClearedDnsRecord(
+            SubdomainEntity entity, String oldIp, String newIp, DnsRecordType recordType) {
+        if (oldIp == null || oldIp.isBlank()) return entity;
+        if (newIp != null && !newIp.isBlank()) return entity;
+        String fqdn = fqdnOf(entity);
+        try {
+            deleteDnsRecord(fqdn, oldIp, recordType);
+            log.info("Removed {} record {} -> {}", recordType, fqdn, oldIp);
+        } catch (Exception e) {
+            entity.setStatus(SubdomainStatus.FAILED);
+            entity = subdomainRepository.save(entity);
+            log.error(
+                    "Route53 {} delete failed for {} -> {}: {}",
+                    recordType,
+                    fqdn,
+                    oldIp,
+                    e.getMessage(),
+                    e);
+        }
         return entity;
     }
 
@@ -285,9 +305,7 @@ public class SubdomainService {
     }
 
     public void deleteSubdomainsByOwner(String uuid) {
-        subdomainRepository
-                .findAllByOwner_Uuid(uuid)
-                .forEach(subdomain -> deleteSubdomain(subdomain.getUuid()));
+        subdomainRepository.findAllByOwner_Uuid(uuid).forEach(this::deleteSubdomain);
     }
 
     private String generateUniqueLabel() {

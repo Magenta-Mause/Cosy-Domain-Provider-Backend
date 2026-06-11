@@ -269,6 +269,39 @@ class SubdomainServiceTest {
         assertThat(s.getTargetIp()).isEqualTo("5.6.7.8");
     }
 
+    @Test
+    void updateTargetIp_clearedIpv6_deletesStaleAaaaRecord() {
+        UserEntity owner = verifiedFreeUser();
+        SubdomainEntity s = subdomain("s1", "foo", owner);
+        s.setTargetIpv6("2001:db8::1");
+        when(subdomainRepository.findById("s1")).thenReturn(Optional.of(s));
+        when(subdomainRepository.save(any())).thenReturn(s);
+
+        SubdomainUpdateDto dto =
+                SubdomainUpdateDto.builder().targetIp("5.6.7.8").targetIpv6(null).build();
+        service.updateTargetIp("s1", dto, owner);
+
+        verify(route53Service).deleteAAAARecord("foo.example.com", "2001:db8::1");
+        verify(route53Service).upsertARecord("foo.example.com", "5.6.7.8");
+        verify(route53Service, never()).upsertAAAARecord(any(), any());
+    }
+
+    @Test
+    void updateTargetIp_keptIpv6_doesNotDeleteRecord() {
+        UserEntity owner = verifiedFreeUser();
+        SubdomainEntity s = subdomain("s1", "foo", owner);
+        s.setTargetIpv6("2001:db8::1");
+        when(subdomainRepository.findById("s1")).thenReturn(Optional.of(s));
+        when(subdomainRepository.save(any())).thenReturn(s);
+
+        SubdomainUpdateDto dto =
+                SubdomainUpdateDto.builder().targetIp("5.6.7.8").targetIpv6("2001:db8::2").build();
+        service.updateTargetIp("s1", dto, owner);
+
+        verify(route53Service, never()).deleteAAAARecord(any(), any());
+        verify(route53Service).upsertAAAARecord("foo.example.com", "2001:db8::2");
+    }
+
     // ---- deleteSubdomain ----
 
     @Test
@@ -277,7 +310,7 @@ class SubdomainServiceTest {
         SubdomainEntity s = subdomain("s1", "foo", owner);
         when(subdomainRepository.findById("s1")).thenReturn(Optional.of(s));
 
-        service.deleteSubdomain("s1");
+        service.adminDeleteSubdomain("s1");
         verify(route53Service).deleteARecord("foo.example.com", "1.2.3.4");
         verify(subdomainRepository).delete(s);
     }
@@ -285,7 +318,7 @@ class SubdomainServiceTest {
     @Test
     void deleteSubdomain_notFound_throws() {
         when(subdomainRepository.findById("missing")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.deleteSubdomain("missing"))
+        assertThatThrownBy(() -> service.adminDeleteSubdomain("missing"))
                 .isInstanceOf(SubdomainNotFoundException.class);
     }
 
@@ -308,7 +341,7 @@ class SubdomainServiceTest {
         doThrow(new RuntimeException("AWS error")).when(route53Service).deleteARecord(any(), any());
         when(subdomainRepository.save(any())).thenReturn(s);
 
-        assertThatThrownBy(() -> service.deleteSubdomain("s1"))
+        assertThatThrownBy(() -> service.adminDeleteSubdomain("s1"))
                 .isInstanceOf(ResponseStatusException.class);
         verify(subdomainRepository).save(s);
     }

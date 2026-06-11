@@ -9,10 +9,9 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.*;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
 import com.magentamause.cosydomainprovider.model.core.MfaSetupResponseDto;
-import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
-import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
 import com.magentamause.cosydomainprovider.services.auth.CaptchaService;
+import com.magentamause.cosydomainprovider.services.auth.RefreshCookieFactory;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.MfaService;
 import com.magentamause.cosydomainprovider.services.core.PasswordResetService;
@@ -38,7 +37,7 @@ class AuthorizationControllerTest {
     @Mock private UserService userService;
     @Mock private UserVerificationService userVerificationService;
     @Mock private PasswordResetService passwordResetService;
-    @Mock private JwtUtils jwtUtils;
+    @Mock private RefreshCookieFactory refreshCookieFactory;
     @Mock private SecurityContextService securityContextService;
     @Mock private MfaService mfaService;
 
@@ -53,11 +52,15 @@ class AuthorizationControllerTest {
                         userService,
                         userVerificationService,
                         passwordResetService,
-                        jwtUtils,
+                        refreshCookieFactory,
                         securityContextService,
                         mfaService);
-        when(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN))
-                .thenReturn(2_678_400_000L);
+        when(refreshCookieFactory.create(anyString(), anyString()))
+                .thenReturn(
+                        org.springframework.http.ResponseCookie.from("refreshToken", "rt").build());
+        when(refreshCookieFactory.expire())
+                .thenReturn(
+                        org.springframework.http.ResponseCookie.from("refreshToken", "").build());
     }
 
     private UserEntity user() {
@@ -131,7 +134,7 @@ class AuthorizationControllerTest {
 
         ResponseEntity<LoginResponseDto> resp = controller.register(dto, TokenMode.DIRECT);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        verify(userVerificationService).sendInitialVerification(created);
+        verify(userVerificationService).issueVerificationToken(created);
     }
 
     @Test

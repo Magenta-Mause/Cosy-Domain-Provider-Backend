@@ -1,5 +1,7 @@
 package com.magentamause.cosydomainprovider.controller.v1.schema;
 
+import com.magentamause.cosydomainprovider.model.action.AdminMaxSubdomainOverrideDto;
+import com.magentamause.cosydomainprovider.model.action.AdminSettingsUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.AdminSubdomainRelabelDto;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
@@ -15,7 +17,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -153,7 +154,7 @@ public interface AdminApi {
             @Parameter(description = "Admin secret key") @RequestHeader("X-Admin-Key")
                     String adminKey,
             @Parameter(description = "User UUID") @PathVariable String uuid,
-            @RequestBody Map<String, Integer> body);
+            @Valid @RequestBody AdminMaxSubdomainOverrideDto body);
 
     @Operation(summary = "Get global admin settings")
     @ApiResponses({
@@ -174,5 +175,5 @@ public interface AdminApi {
     ResponseEntity<AdminSettingsDto> updateSettings(
             @Parameter(description = "Admin secret key") @RequestHeader("X-Admin-Key")
                     String adminKey,
-            @RequestBody Map<String, Boolean> body);
+            @Valid @RequestBody AdminSettingsUpdateDto body);
 }

@@ -54,6 +54,7 @@ public class UserService {
 
     public UserEntity updateUser(UpdateUserDto dto, UserEntity user) {
         if (dto.getNewUsername() != null) {
+            requireUsernameAvailable(dto.getNewUsername(), user.getUuid());
             user.setUsername(dto.getNewUsername());
         }
         if (dto.getNewPassword() != null) {
@@ -75,6 +76,7 @@ public class UserService {
         if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
+        requireUsernameAvailable(dto.getUsername(), null);
         UserEntity user =
                 UserEntity.builder()
                         .username(dto.getUsername())
@@ -103,6 +105,7 @@ public class UserService {
     public UserEntity adminUpdateUser(String uuid, AdminUserUpdateDto dto) {
         UserEntity user = getUserByUuid(uuid);
         if (dto.getUsername() != null) {
+            requireUsernameAvailable(dto.getUsername(), uuid);
             user.setUsername(dto.getUsername());
         }
         if (dto.getEmail() != null) {
@@ -121,5 +124,16 @@ public class UserService {
         UserEntity user = getUserByUuid(uuid);
         user.setMaxSubdomainCountOverride(value);
         return userRepository.save(user);
+    }
+
+    private void requireUsernameAvailable(String username, String selfUuid) {
+        userRepository
+                .findByUsernameIgnoreCase(username)
+                .filter(existing -> !existing.getUuid().equals(selfUuid))
+                .ifPresent(
+                        existing -> {
+                            throw new ResponseStatusException(
+                                    HttpStatus.CONFLICT, "Username already in use");
+                        });
     }
 }

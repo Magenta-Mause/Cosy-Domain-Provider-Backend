@@ -5,16 +5,14 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.action.*;
 import com.magentamause.cosydomainprovider.model.core.LoginResponseDto;
 import com.magentamause.cosydomainprovider.model.core.MfaSetupResponseDto;
-import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
-import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
 import com.magentamause.cosydomainprovider.services.auth.CaptchaService;
+import com.magentamause.cosydomainprovider.services.auth.RefreshCookieFactory;
 import com.magentamause.cosydomainprovider.services.auth.SecurityContextService;
 import com.magentamause.cosydomainprovider.services.core.MfaService;
 import com.magentamause.cosydomainprovider.services.core.PasswordResetService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
 import com.magentamause.cosydomainprovider.services.core.UserVerificationService;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,14 +22,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class AuthorizationController implements AuthorizationApi {
 
-    private static final String REFRESH_COOKIE_PATH = "/api/v1/auth/token";
-
     private final AuthorizationService authorizationService;
     private final CaptchaService captchaService;
     private final UserService userService;
     private final UserVerificationService userVerificationService;
     private final PasswordResetService passwordResetService;
-    private final JwtUtils jwtUtils;
+    private final RefreshCookieFactory refreshCookieFactory;
     private final SecurityContextService securityContextService;
     private final MfaService mfaService;
 
@@ -54,7 +50,7 @@ public class AuthorizationController implements AuthorizationApi {
             UserCreationDto userCreationDto, TokenMode tokenMode) {
         captchaService.verifyCaptcha(userCreationDto.getCaptchaToken());
         UserEntity user = userService.createUser(userCreationDto);
-        userVerificationService.sendInitialVerification(user);
+        userVerificationService.issueVerificationToken(user);
         String refreshToken = authorizationService.generateRefreshToken(user.getUuid());
         return buildRefreshTokenResponse(refreshToken, tokenMode, HttpStatus.CREATED);
     }
@@ -67,17 +63,8 @@ public class AuthorizationController implements AuthorizationApi {
 
     @Override
     public ResponseEntity<Void> logout() {
-        ResponseCookie deleteCookie =
-                ResponseCookie.from("refreshToken", "")
-                        .httpOnly(true)
-                        .secure(false)
-                        .path(REFRESH_COOKIE_PATH)
-                        .maxAge(0)
-                        .sameSite("Strict")
-                        .build();
-
         return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookieFactory.expire().toString())
                 .build();
     }
 
@@ -163,16 +150,7 @@ public class AuthorizationController implements AuthorizationApi {
         }
 
         ResponseCookie responseCookie =
-                ResponseCookie.from("refreshToken", refreshToken)
-                        .httpOnly(true)
-                        .secure(false)
-                        .maxAge(
-                                TimeUnit.MILLISECONDS.toSeconds(
-                                        jwtUtils.getTokenValidityDuration(
-                                                JwtTokenBody.TokenType.REFRESH_TOKEN)))
-                        .path(REFRESH_COOKIE_PATH)
-                        .sameSite("Strict")
-                        .build();
+                refreshCookieFactory.create(refreshToken, RefreshCookieFactory.SAME_SITE_STRICT);
         return ResponseEntity.status(successStatus)
                 .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
                 .build();

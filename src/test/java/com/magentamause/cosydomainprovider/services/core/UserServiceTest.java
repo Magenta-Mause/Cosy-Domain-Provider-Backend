@@ -146,6 +146,52 @@ class UserServiceTest {
     }
 
     @Test
+    void createUser_usernameConflict() {
+        UserCreationDto dto =
+                UserCreationDto.builder()
+                        .username("bob")
+                        .email("bob@example.com")
+                        .password("pass")
+                        .build();
+        when(userRepository.existsByEmailIgnoreCase("bob@example.com")).thenReturn(false);
+        when(userRepository.findByUsernameIgnoreCase("bob")).thenReturn(Optional.of(user("other")));
+        assertThatThrownBy(() -> userService.createUser(dto))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.CONFLICT));
+    }
+
+    @Test
+    void updateUser_usernameTakenByOther_throwsConflict() {
+        UserEntity u = user("u1");
+        UpdateUserDto dto = new UpdateUserDto();
+        dto.setNewUsername("newname");
+        when(userRepository.findByUsernameIgnoreCase("newname"))
+                .thenReturn(Optional.of(user("u2")));
+
+        assertThatThrownBy(() -> userService.updateUser(dto, u))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(
+                        e ->
+                                assertThat(((ResponseStatusException) e).getStatusCode())
+                                        .isEqualTo(HttpStatus.CONFLICT));
+    }
+
+    @Test
+    void updateUser_usernameOnlyCaseChange_allowsSelf() {
+        UserEntity u = user("u1");
+        UpdateUserDto dto = new UpdateUserDto();
+        dto.setNewUsername("Alice");
+        when(userRepository.findByUsernameIgnoreCase("Alice")).thenReturn(Optional.of(u));
+        when(userRepository.save(u)).thenReturn(u);
+
+        UserEntity result = userService.updateUser(dto, u);
+        assertThat(result.getUsername()).isEqualTo("Alice");
+    }
+
+    @Test
     void updateUser_updatesUsername() {
         UserEntity u = user("u1");
         UpdateUserDto dto = new UpdateUserDto();

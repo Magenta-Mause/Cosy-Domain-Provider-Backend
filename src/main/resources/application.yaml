@@ -42,7 +42,7 @@ aws:
     default-ttl: 300
 
 jwt:
-  secret-key: ${COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY:e8996bf24977ce5615015c717447911799207025d1998a01256b7b7717bac18e} #change in prod
+  secret-key: ${COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY} # no default — dev value lives in application-local.yaml
   identity-token-expiration-time: 3600000 #1 hour
   refresh-token-expiration-time: 2678400000 #1 month
   mfa-challenge-token-expiration-time: 300000 #5 minutes
@@ -55,6 +55,12 @@ client:
 frontend:
   url: ${FRONTEND_URL:http://localhost:5173}
 
+auth:
+  cookie:
+    # Secure by default; the local profile overrides this for plain-HTTP dev.
+    # Falls back to the legacy OAUTH_SECURE_COOKIE env var still set in existing deployments.
+    secure: ${AUTH_COOKIE_SECURE:${OAUTH_SECURE_COOKIE:true}}
+
 stripe:
   api-key: ${STRIPE_API_KEY}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
@@ -62,8 +68,6 @@ stripe:
   price-id: ${STRIPE_PRICE_ID}
 
 oauth:
-  frontend-url: ${FRONTEND_URL:http://localhost:5173}
-  secure-cookie: ${OAUTH_SECURE_COOKIE:false}
   providers:
     google:
       client-id: ${OAUTH_GOOGLE_CLIENT_ID}
@@ -91,7 +95,7 @@ oauth:
       callback-uri: ${OAUTH_DISCORD_CALLBACK_URI:http://localhost:8080/api/v1/auth/oauth/discord/callback}
 
 admin:
-  secret-key: ${ADMIN_SECRET_KEY:change-me-in-prod}
+  secret-key: ${ADMIN_SECRET_KEY} # no default — dev value lives in application-local.yaml
 
 turnstile:
   secret-key: ${TURNSTILE_SECRET_KEY}

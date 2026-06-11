@@ -44,11 +44,11 @@ class UserVerificationServiceTest {
     }
 
     @Test
-    void sendInitialVerification_setsTokenAndSaves() {
+    void issueVerificationToken_setsTokenAndSaves() {
         UserEntity u = UserEntity.builder().uuid("u1").username("a").email("a@a.com").build();
         when(userRepository.save(any())).thenReturn(u);
 
-        service.sendInitialVerification(u);
+        service.issueVerificationToken(u);
         assertThat(u.getAccessToken()).isNotNull();
         assertThat(u.getAccessTokenExpiresAt()).isAfter(Instant.now());
     }

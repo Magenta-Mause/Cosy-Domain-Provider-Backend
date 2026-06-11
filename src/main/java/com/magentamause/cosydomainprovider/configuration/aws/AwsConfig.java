@@ -10,11 +10,8 @@ import software.amazon.awssdk.services.route53.Route53Client;
 @Configuration
 public class AwsConfig {
 
-    @Value("${aws.region}")
-    private String region;
-
     @Bean
-    public Route53Client route53Client() {
+    public Route53Client route53Client(@Value("${aws.region}") String region) {
         return Route53Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(DefaultCredentialsProvider.create())

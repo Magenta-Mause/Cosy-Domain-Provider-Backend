@@ -2,6 +2,17 @@ staging:
   captcha-bypass:
     enabled: true
 
+auth:
+  cookie:
+    secure: false
+
+# Dev-only secrets — never use these values outside local development.
+jwt:
+  secret-key: ${COSY_DOMAIN_PROVIDER_JWT_SECRET_KEY:5b1d3aab2a4af3c47e8e1f06bd1c1e1c1b2a39487aa1c4f0d2e6b58a91c7d3f4}
+
+admin:
+  secret-key: ${ADMIN_SECRET_KEY:local-admin-key}
+
 rate-limit:
   auth:
     requests: 1000

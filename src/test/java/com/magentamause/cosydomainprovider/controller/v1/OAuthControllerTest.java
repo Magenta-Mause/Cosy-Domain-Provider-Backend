@@ -3,12 +3,12 @@ package com.magentamause.cosydomainprovider.controller.v1;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.magentamause.cosydomainprovider.configuration.oauth.OAuthProperties;
+import com.magentamause.cosydomainprovider.configuration.web.FrontendProperties;
 import com.magentamause.cosydomainprovider.controller.v1.implementation.OAuthController;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
-import com.magentamause.cosydomainprovider.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosydomainprovider.security.jwtfilter.JwtUtils;
 import com.magentamause.cosydomainprovider.services.auth.AuthorizationService;
+import com.magentamause.cosydomainprovider.services.auth.RefreshCookieFactory;
 import com.magentamause.cosydomainprovider.services.auth.oauth.OAuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,8 @@ class OAuthControllerTest {
 
     @Mock private OAuthService oAuthService;
     @Mock private AuthorizationService authorizationService;
-    @Mock private OAuthProperties oAuthProperties;
+    @Mock private FrontendProperties frontendProperties;
+    @Mock private RefreshCookieFactory refreshCookieFactory;
     @Mock private JwtUtils jwtUtils;
 
     private OAuthController controller;
@@ -35,10 +36,16 @@ class OAuthControllerTest {
     @BeforeEach
     void setUp() {
         controller =
-                new OAuthController(oAuthService, authorizationService, oAuthProperties, jwtUtils);
-        when(oAuthProperties.getFrontendUrl()).thenReturn("http://localhost:5173");
-        when(jwtUtils.getTokenValidityDuration(JwtTokenBody.TokenType.REFRESH_TOKEN))
-                .thenReturn(2_678_400_000L);
+                new OAuthController(
+                        oAuthService,
+                        authorizationService,
+                        frontendProperties,
+                        refreshCookieFactory,
+                        jwtUtils);
+        when(frontendProperties.getUrl()).thenReturn("http://localhost:5173");
+        when(refreshCookieFactory.create(anyString(), anyString()))
+                .thenReturn(
+                        org.springframework.http.ResponseCookie.from("refreshToken", "rt").build());
         when(oAuthService.peekLinkedUserId(anyString())).thenReturn(null);
     }
 

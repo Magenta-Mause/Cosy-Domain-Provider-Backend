@@ -3,6 +3,7 @@ package com.magentamause.cosydomainprovider.controller;
 import com.magentamause.cosydomainprovider.model.exception.ApiError;
 import com.magentamause.cosydomainprovider.model.exception.DomainException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -27,13 +28,13 @@ public class ExceptionController {
                                 .statusCode(e.getStatus().value())
                                 .errorCode(e.getErrorCode())
                                 .path(request.getRequestURI())
-                                .timestamp(new java.util.Date())
+                                .timestamp(Instant.now())
                                 .build());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleException(Exception e, HttpServletRequest request) {
-        log.warn("Internal server error: {}", e.getMessage(), e);
+        log.error("Internal server error: {}", e.getMessage(), e);
         return ResponseEntity.internalServerError()
                 .body(
                         ApiError.builder()
@@ -41,7 +42,7 @@ public class ExceptionController {
                                 .statusCode(500)
                                 .errorCode("INTERNAL_SERVER_ERROR")
                                 .path(request.getRequestURI())
-                                .timestamp(new java.util.Date())
+                                .timestamp(Instant.now())
                                 .build());
     }
 
@@ -60,7 +61,7 @@ public class ExceptionController {
                                 .statusCode(400)
                                 .errorCode("VALIDATION_ERROR")
                                 .path(request.getRequestURI())
-                                .timestamp(new java.util.Date())
+                                .timestamp(Instant.now())
                                 .build());
     }
 
@@ -76,7 +77,7 @@ public class ExceptionController {
                                 .statusCode(409)
                                 .errorCode("CONFLICT")
                                 .path(request.getRequestURI())
-                                .timestamp(new java.util.Date())
+                                .timestamp(Instant.now())
                                 .build());
     }
 
@@ -90,7 +91,7 @@ public class ExceptionController {
                                 .statusCode(e.getStatusCode().value())
                                 .errorCode(e.getStatusCode().toString())
                                 .path(request.getRequestURI())
-                                .timestamp(new java.util.Date())
+                                .timestamp(Instant.now())
                                 .build());
     }
 
@@ -104,7 +105,7 @@ public class ExceptionController {
                                 .statusCode(401)
                                 .errorCode("UNAUTHORIZED")
                                 .path(request.getRequestURI())
-                                .timestamp(new java.util.Date())
+                                .timestamp(Instant.now())
                                 .build());
     }
 
@@ -118,7 +119,7 @@ public class ExceptionController {
                                 .statusCode(404)
                                 .errorCode("RESOURCE_NOT_FOUND")
                                 .path(request.getRequestURI())
-                                .timestamp(new java.util.Date())
+                                .timestamp(Instant.now())
                                 .build());
     }
 }

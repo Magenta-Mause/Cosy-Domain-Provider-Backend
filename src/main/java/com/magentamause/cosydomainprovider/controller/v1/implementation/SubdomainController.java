@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestController
@@ -54,16 +53,6 @@ public class SubdomainController implements SubdomainApi {
 
     @Override
     public ResponseEntity<SubdomainDto> createSubdomain(SubdomainCreationDto creationDto) {
-        if (creationDto.getLabel() != null && !creationDto.getLabel().isBlank()) {
-            if (creationDto.getLabel().length() < 3) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Label must be at least 3 characters long");
-            }
-            if (creationDto.getLabel().length() > 45) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Label must be at most 45 characters long");
-            }
-        }
         UserEntity owner = securityContextService.getUser();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(

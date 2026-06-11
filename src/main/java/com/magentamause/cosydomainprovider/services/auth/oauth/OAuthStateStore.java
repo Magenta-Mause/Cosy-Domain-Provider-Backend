@@ -37,8 +37,9 @@ class OAuthStateStore {
         return state;
     }
 
+    // Public so Spring's proxy-based @Transactional applies (ignored on package-private methods).
     @Transactional
-    Optional<OAuthStateEntity> consumeState(String state) {
+    public Optional<OAuthStateEntity> consumeState(String state) {
         Optional<OAuthStateEntity> entity = oAuthStateRepository.findById(state);
         if (entity.isEmpty()) {
             return Optional.empty();

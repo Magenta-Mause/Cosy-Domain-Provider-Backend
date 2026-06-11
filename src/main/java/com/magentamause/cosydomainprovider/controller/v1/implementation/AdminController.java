@@ -1,9 +1,10 @@
 package com.magentamause.cosydomainprovider.controller.v1.implementation;
 
-import com.magentamause.cosydomainprovider.configuration.admin.AdminProperties;
 import com.magentamause.cosydomainprovider.controller.v1.schema.AdminApi;
 import com.magentamause.cosydomainprovider.entity.SubdomainEntity;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
+import com.magentamause.cosydomainprovider.model.action.AdminMaxSubdomainOverrideDto;
+import com.magentamause.cosydomainprovider.model.action.AdminSettingsUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.AdminSubdomainRelabelDto;
 import com.magentamause.cosydomainprovider.model.action.AdminUserUpdateDto;
 import com.magentamause.cosydomainprovider.model.action.SubdomainUpdateDto;
@@ -15,28 +16,21 @@ import com.magentamause.cosydomainprovider.model.core.UserDto;
 import com.magentamause.cosydomainprovider.services.core.GlobalSettingsService;
 import com.magentamause.cosydomainprovider.services.core.SubdomainService;
 import com.magentamause.cosydomainprovider.services.core.UserService;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
 public class AdminController implements AdminApi {
 
-    private final AdminProperties adminProperties;
     private final SubdomainService subdomainService;
     private final UserService userService;
     private final GlobalSettingsService globalSettingsService;
 
     @Override
     public ResponseEntity<List<AdminSubdomainDto>> getAllSubdomains(String adminKey) {
-        validateKey(adminKey);
         List<AdminSubdomainDto> dtos =
                 subdomainService.adminGetAllSubdomains().stream()
                         .map(this::toAdminSubdomainDto)
@@ -46,14 +40,12 @@ public class AdminController implements AdminApi {
 
     @Override
     public ResponseEntity<AdminSubdomainDto> getSubdomain(String adminKey, String uuid) {
-        validateKey(adminKey);
         return ResponseEntity.ok(toAdminSubdomainDto(subdomainService.adminGetSubdomain(uuid)));
     }
 
     @Override
     public ResponseEntity<AdminSubdomainDto> updateSubdomainTargetIp(
             String adminKey, String uuid, SubdomainUpdateDto body) {
-        validateKey(adminKey);
         return ResponseEntity.ok(
                 toAdminSubdomainDto(subdomainService.adminUpdateTargetIp(uuid, body)));
     }
@@ -61,21 +53,18 @@ public class AdminController implements AdminApi {
     @Override
     public ResponseEntity<AdminSubdomainDto> relabelSubdomain(
             String adminKey, String uuid, AdminSubdomainRelabelDto body) {
-        validateKey(adminKey);
         return ResponseEntity.ok(
                 toAdminSubdomainDto(subdomainService.adminRelabelSubdomain(uuid, body.getLabel())));
     }
 
     @Override
     public ResponseEntity<Void> deleteSubdomain(String adminKey, String uuid) {
-        validateKey(adminKey);
-        subdomainService.deleteSubdomain(uuid);
+        subdomainService.adminDeleteSubdomain(uuid);
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<List<AdminUserDto>> getAllUsers(String adminKey) {
-        validateKey(adminKey);
         List<AdminUserDto> dtos =
                 userService.getAllUsers().stream().map(this::toAdminUserDto).toList();
         return ResponseEntity.ok(dtos);
@@ -83,7 +72,6 @@ public class AdminController implements AdminApi {
 
     @Override
     public ResponseEntity<AdminUserDetailDto> getUserDetail(String adminKey, String uuid) {
-        validateKey(adminKey);
         UserEntity user = userService.getUserByUuid(uuid);
         List<AdminSubdomainDto> subdomains =
                 subdomainService.getSubdomainsForOwner(user).stream()
@@ -107,30 +95,25 @@ public class AdminController implements AdminApi {
     @Override
     public ResponseEntity<AdminUserDto> updateUser(
             String adminKey, String uuid, AdminUserUpdateDto body) {
-        validateKey(adminKey);
         return ResponseEntity.ok(toAdminUserDto(userService.adminUpdateUser(uuid, body)));
     }
 
     @Override
     public ResponseEntity<Void> deleteUser(String adminKey, String uuid) {
-        validateKey(adminKey);
         userService.deleteUserByUuid(uuid);
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<UserDto> setMaxSubdomainOverride(
-            String adminKey, String uuid, Map<String, Integer> body) {
-        validateKey(adminKey);
+            String adminKey, String uuid, AdminMaxSubdomainOverrideDto body) {
         UserEntity user =
-                userService.adminSetMaxSubdomainOverride(
-                        uuid, body.get("maxSubdomainCountOverride"));
+                userService.adminSetMaxSubdomainOverride(uuid, body.getMaxSubdomainCountOverride());
         return ResponseEntity.ok(user.toDto(userService.computeMaxSubdomainCount(user)));
     }
 
     @Override
     public ResponseEntity<AdminSettingsDto> getSettings(String adminKey) {
-        validateKey(adminKey);
         return ResponseEntity.ok(
                 AdminSettingsDto.builder()
                         .domainCreationEnabled(globalSettingsService.isDomainCreationEnabled())
@@ -139,19 +122,10 @@ public class AdminController implements AdminApi {
 
     @Override
     public ResponseEntity<AdminSettingsDto> updateSettings(
-            String adminKey, Map<String, Boolean> body) {
-        validateKey(adminKey);
-        boolean enabled = body.getOrDefault("domainCreationEnabled", true);
+            String adminKey, AdminSettingsUpdateDto body) {
+        boolean enabled = body.getDomainCreationEnabled();
         globalSettingsService.setDomainCreationEnabled(enabled);
         return ResponseEntity.ok(AdminSettingsDto.builder().domainCreationEnabled(enabled).build());
-    }
-
-    private void validateKey(String key) {
-        if (!MessageDigest.isEqual(
-                adminProperties.getSecretKey().getBytes(StandardCharsets.UTF_8),
-                key.getBytes(StandardCharsets.UTF_8))) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid admin key");
-        }
     }
 
     private AdminSubdomainDto toAdminSubdomainDto(SubdomainEntity s) {

@@ -1,6 +1,7 @@
 package com.magentamause.cosydomainprovider.services.billing;
 
 import com.magentamause.cosydomainprovider.configuration.stripe.StripeProperties;
+import com.magentamause.cosydomainprovider.configuration.web.FrontendProperties;
 import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.model.core.Plan;
 import com.magentamause.cosydomainprovider.repository.UserRepository;
@@ -21,7 +22,6 @@ import com.stripe.param.billingportal.SessionCreateParams;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,9 +33,7 @@ public class StripeService {
 
     private final StripeProperties stripeProperties;
     private final UserRepository userRepository;
-
-    @Value("${frontend.url}")
-    private String frontendUrl;
+    private final FrontendProperties frontendProperties;
 
     public String createBillingPortalSession(UserEntity user) {
         try {
@@ -43,7 +41,7 @@ public class StripeService {
             SessionCreateParams params =
                     SessionCreateParams.builder()
                             .setCustomer(customerId)
-                            .setReturnUrl(frontendUrl + "/billing")
+                            .setReturnUrl(frontendProperties.getUrl() + "/billing")
                             .build();
             return com.stripe.model.billingportal.Session.create(params).getUrl();
         } catch (StripeException e) {
@@ -70,8 +68,8 @@ public class StripeService {
                                             .setQuantity(1L)
                                             .build())
                             .setAllowPromotionCodes(true)
-                            .setSuccessUrl(frontendUrl + "/billing?success=true")
-                            .setCancelUrl(frontendUrl + "/billing")
+                            .setSuccessUrl(frontendProperties.getUrl() + "/billing?success=true")
+                            .setCancelUrl(frontendProperties.getUrl() + "/billing")
                             .putMetadata("userId", user.getUuid())
                             .build();
             return com.stripe.model.checkout.Session.create(params).getUrl();

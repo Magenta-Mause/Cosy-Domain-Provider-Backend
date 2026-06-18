@@ -17,7 +17,7 @@ Fetch (WebClient) → KI-Verdikt (Haiku 4.5, Batch) → Persistenz → Admin-Rev
 
 ## Betrieb
 
-- **Trigger:** K8s **CronJob** → interner Admin-Endpoint (bestehendes Monitoring-/GitOps-Muster, API-Key via SealedSecret).
+- **Trigger:** K8s **CronJob** → interner Admin-Endpoint unter `/api/v1/admin/...` (bestehendes Monitoring-/GitOps-Muster, `X-Admin-Key` via SealedSecret).
 - **Zwei Phasen:** *Submit* (Fetch + Batch einreichen) / *Ingest* (Batch pollen + Ergebnisse speichern).
 - **Scope:** nur Free-Tier; batchweise übers Intervall verteilt.
 

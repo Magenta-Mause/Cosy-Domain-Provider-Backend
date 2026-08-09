@@ -6,6 +6,14 @@ public enum WatchtowerCategory {
     COSY_FRONTEND,
     /** Some other legitimate use (blog, portfolio, docs, …). No reputation concern. */
     BENIGN,
+    /**
+     * The host answered but there is nothing on it — a parked or not-yet-configured subdomain,
+     * typically 404 on every path. Distinct from {@link #UNREACHABLE}, which means nothing answered
+     * at all, and from {@link #BENIGN}, which implies actual content someone put there. Without
+     * this the agent had to force an empty site into one of those two and picked differently
+     * between runs.
+     */
+    EMPTY,
     /** Shows patterns worth a human look, but nothing conclusive. */
     SUSPICIOUS,
     /** Clear abuse: scam, phishing, fake shop, malware distribution. */

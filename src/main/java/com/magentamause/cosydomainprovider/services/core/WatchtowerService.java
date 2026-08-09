@@ -66,6 +66,7 @@ public class WatchtowerService {
                 .scannedSubdomains(latest.size())
                 .cosyFrontends(countByCategory(latest, WatchtowerCategory.COSY_FRONTEND))
                 .benign(countByCategory(latest, WatchtowerCategory.BENIGN))
+                .empty(countByCategory(latest, WatchtowerCategory.EMPTY))
                 .flagged(
                         latest.stream()
                                 .filter(s -> FLAGGED_CATEGORIES.contains(s.getCategory()))

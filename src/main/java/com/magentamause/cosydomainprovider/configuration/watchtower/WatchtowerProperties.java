@@ -17,9 +17,15 @@ public class WatchtowerProperties {
     @Setter
     public static class Screenshots {
         /**
-         * S3 endpoint of the in-cluster MinIO. Blank disables screenshot links entirely — the rest
-         * of Watchtower keeps working, scans just render without an image. That is the default so
-         * local dev needs no MinIO.
+         * S3 endpoint used to build presigned screenshot URLs. This must be the endpoint the
+         * <em>admin's browser</em> can reach, not the in-cluster Service address: a SigV4 signature
+         * covers the host, so a URL signed for {@code minio.minio.svc.cluster.local} cannot be
+         * rewritten client-side and simply fails to load. The backend never uploads and never calls
+         * MinIO itself — presigning is local computation — so it has no reason to prefer the
+         * internal address.
+         *
+         * <p>Blank disables screenshot links entirely; the rest of Watchtower keeps working and
+         * scans render without an image. That is the default so local dev needs no MinIO.
          */
         private String endpoint = "";
 

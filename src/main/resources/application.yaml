@@ -100,7 +100,8 @@ admin:
 watchtower:
   screenshots:
     # Blank endpoint = screenshot links disabled; scans still render, just without images.
-    # Prod points this at the in-cluster MinIO.
+    # Must be the endpoint the admin's BROWSER can reach (prod: https://minio-cli.jannekeipert.de),
+    # not the in-cluster Service — the presigned URL's signature covers the host.
     endpoint: ${WATCHTOWER_S3_ENDPOINT:}
     region: ${WATCHTOWER_S3_REGION:us-east-1}
     bucket: ${WATCHTOWER_S3_BUCKET:cosy-watchtower-screenshots}

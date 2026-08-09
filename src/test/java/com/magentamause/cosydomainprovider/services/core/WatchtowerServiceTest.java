@@ -113,6 +113,31 @@ class WatchtowerServiceTest {
     }
 
     @Test
+    void adminGetSummary_countsEmptySeparatelyFromBenignAndUnreachable() {
+        SubdomainEntity a = subdomain("sd-1", "soft-cove");
+        SubdomainEntity b = subdomain("sd-2", "calm-otter");
+        SubdomainEntity c = subdomain("sd-3", "dead-host");
+        WatchtowerScanEntity parked = scan("s-1", a, WatchtowerCategory.EMPTY);
+        when(scanRepository.findLatestPerSubdomain())
+                .thenReturn(
+                        List.of(
+                                parked,
+                                scan("s-2", b, WatchtowerCategory.BENIGN),
+                                scan("s-3", c, WatchtowerCategory.UNREACHABLE)));
+        when(subdomainRepository.count()).thenReturn(3L);
+        when(scanRepository.findFirstByOrderByScannedAtDesc()).thenReturn(Optional.of(parked));
+
+        AdminWatchtowerSummaryDto summary = service.adminGetSummary();
+
+        // A parked subdomain is neither content someone put there nor a dead host;
+        // collapsing it into either would misreport how much of the estate is in use.
+        assertThat(summary.getEmpty()).isEqualTo(1);
+        assertThat(summary.getBenign()).isEqualTo(1);
+        assertThat(summary.getUnreachable()).isEqualTo(1);
+        assertThat(summary.getFlagged()).isZero();
+    }
+
+    @Test
     void adminGetSummary_dismissedFlagNoLongerCountsAsPending() {
         SubdomainEntity c = subdomain("sd-3", "swift-gecko");
         WatchtowerScanEntity flagged = scan("s-3", c, WatchtowerCategory.SUSPICIOUS);

@@ -12,6 +12,7 @@ public class AdminWatchtowerSummaryDto {
     private final long scannedSubdomains;
     private final long cosyFrontends;
     private final long benign;
+    private final long empty;
     private final long flagged;
     private final long unreachable;
     private final long pendingReview;

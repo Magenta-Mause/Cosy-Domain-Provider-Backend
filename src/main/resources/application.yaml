@@ -97,6 +97,17 @@ oauth:
 admin:
   secret-key: ${ADMIN_SECRET_KEY} # no default — dev value lives in application-local.yaml
 
+watchtower:
+  screenshots:
+    # Blank endpoint = screenshot links disabled; scans still render, just without images.
+    # Prod points this at the in-cluster MinIO.
+    endpoint: ${WATCHTOWER_S3_ENDPOINT:}
+    region: ${WATCHTOWER_S3_REGION:us-east-1}
+    bucket: ${WATCHTOWER_S3_BUCKET:cosy-watchtower-screenshots}
+    access-key: ${WATCHTOWER_S3_ACCESS_KEY:}
+    secret-key: ${WATCHTOWER_S3_SECRET_KEY:}
+    presign-ttl-seconds: ${WATCHTOWER_S3_PRESIGN_TTL_SECONDS:900}
+
 turnstile:
   secret-key: ${TURNSTILE_SECRET_KEY}
 

@@ -18,16 +18,19 @@ import com.magentamause.cosydomainprovider.model.exception.LabelConflictExceptio
 import com.magentamause.cosydomainprovider.model.exception.SubdomainNotFoundException;
 import com.magentamause.cosydomainprovider.model.exception.SubdomainQuotaExceededException;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
+import com.magentamause.cosydomainprovider.repository.WatchtowerScanRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 class SubdomainServiceTest {
 
     @Mock private SubdomainRepository subdomainRepository;
+    @Mock private WatchtowerScanRepository watchtowerScanRepository;
     @Mock private Route53Service route53Service;
     @Mock private SubdomainProperties subdomainProperties;
     @Mock private Route53Properties route53Properties;
@@ -48,6 +52,7 @@ class SubdomainServiceTest {
         service =
                 new SubdomainService(
                         subdomainRepository,
+                        watchtowerScanRepository,
                         route53Service,
                         subdomainProperties,
                         route53Properties,
@@ -344,6 +349,34 @@ class SubdomainServiceTest {
         assertThatThrownBy(() -> service.adminDeleteSubdomain("s1"))
                 .isInstanceOf(ResponseStatusException.class);
         verify(subdomainRepository).save(s);
+    }
+
+    @Test
+    void deleteSubdomain_removesWatchtowerScansBeforeSubdomain() {
+        UserEntity owner = verifiedFreeUser();
+        SubdomainEntity s = subdomain("s1", "foo", owner);
+        when(subdomainRepository.findById("s1")).thenReturn(Optional.of(s));
+
+        service.adminDeleteSubdomain("s1");
+
+        InOrder inOrder = inOrder(watchtowerScanRepository, subdomainRepository);
+        inOrder.verify(watchtowerScanRepository).deleteAllBySubdomain_Uuid("s1");
+        inOrder.verify(subdomainRepository).delete(s);
+    }
+
+    @Test
+    void deleteSubdomain_databaseFailure_isNotReportedAsDnsFailure() {
+        UserEntity owner = verifiedFreeUser();
+        SubdomainEntity s = subdomain("s1", "foo", owner);
+        when(subdomainRepository.findById("s1")).thenReturn(Optional.of(s));
+        doThrow(new DataIntegrityViolationException("FK violation"))
+                .when(subdomainRepository)
+                .delete(s);
+
+        assertThatThrownBy(() -> service.adminDeleteSubdomain("s1"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThat(s.getStatus()).isNotEqualTo(SubdomainStatus.FAILED);
+        verify(subdomainRepository, never()).save(any());
     }
 
     // ---- checkLabelAvailability ----

@@ -15,6 +15,7 @@ import com.magentamause.cosydomainprovider.model.exception.LabelConflictExceptio
 import com.magentamause.cosydomainprovider.model.exception.SubdomainNotFoundException;
 import com.magentamause.cosydomainprovider.model.exception.SubdomainQuotaExceededException;
 import com.magentamause.cosydomainprovider.repository.SubdomainRepository;
+import com.magentamause.cosydomainprovider.repository.WatchtowerScanRepository;
 import com.magentamause.cosydomainprovider.services.aws.Route53Service;
 import java.util.List;
 import java.util.Locale;
@@ -45,6 +46,7 @@ public class SubdomainService {
     private static final String ACTOR_ADMIN = "admin";
 
     private final SubdomainRepository subdomainRepository;
+    private final WatchtowerScanRepository watchtowerScanRepository;
     private final Route53Service route53Service;
     private final SubdomainProperties subdomainProperties;
     private final Route53Properties route53Properties;
@@ -362,6 +364,9 @@ public class SubdomainService {
 
     private void deleteSubdomain(SubdomainEntity entity) {
         String fqdn = fqdnOf(entity);
+        // Only the Route53 calls are guarded: a DNS failure is retryable and the row is kept.
+        // Anything that goes wrong locally afterwards is our bug, not the registrar's, and must
+        // not be reported to the user as "failed to remove DNS record".
         try {
             if (entity.getTargetIp() != null && !entity.getTargetIp().isBlank()) {
                 deleteDnsRecord(fqdn, entity.getTargetIp(), DnsRecordType.A);
@@ -369,8 +374,6 @@ public class SubdomainService {
             if (entity.getTargetIpv6() != null && !entity.getTargetIpv6().isBlank()) {
                 deleteDnsRecord(fqdn, entity.getTargetIpv6(), DnsRecordType.AAAA);
             }
-            subdomainRepository.delete(entity);
-            log.info("Deleted subdomain {}", fqdn);
         } catch (Exception e) {
             entity.setStatus(SubdomainStatus.FAILED);
             subdomainRepository.save(entity);
@@ -379,6 +382,10 @@ public class SubdomainService {
                     HttpStatus.BAD_GATEWAY,
                     "Failed to remove DNS record; subdomain marked FAILED and retained for retry");
         }
+        // Watchtower scans hold a non-null FK to the subdomain, so the history goes first.
+        watchtowerScanRepository.deleteAllBySubdomain_Uuid(entity.getUuid());
+        subdomainRepository.delete(entity);
+        log.info("Deleted subdomain {}", fqdn);
     }
 
     private void deleteDnsRecord(String fqdn, String ip, DnsRecordType recordType) {

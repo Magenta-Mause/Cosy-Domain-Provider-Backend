@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface WatchtowerScanRepository extends JpaRepository<WatchtowerScanEntity, String> {
 
@@ -31,6 +32,10 @@ public interface WatchtowerScanRepository extends JpaRepository<WatchtowerScanEn
      * Drops a subdomain's scan history so the subdomain row itself can be deleted — the scans hold
      * a non-null FK to it. Derived (load-then-delete) on purpose: a bulk delete query would leave
      * the {@code watchtower_scan_visited_path} rows of the element collection behind.
+     *
+     * <p>{@code @Transactional} is required: unlike the inherited CRUD methods, derived query
+     * methods get no transaction from Spring Data, and a {@code remove} without one fails.
      */
+    @Transactional
     void deleteAllBySubdomain_Uuid(String subdomainUuid);
 }

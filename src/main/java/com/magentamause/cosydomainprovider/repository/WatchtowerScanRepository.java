@@ -26,4 +26,11 @@ public interface WatchtowerScanRepository extends JpaRepository<WatchtowerScanEn
     List<WatchtowerScanEntity> findAllBySubdomain_UuidOrderByScannedAtDesc(String subdomainUuid);
 
     Optional<WatchtowerScanEntity> findFirstByOrderByScannedAtDesc();
+
+    /**
+     * Drops a subdomain's scan history so the subdomain row itself can be deleted — the scans hold
+     * a non-null FK to it. Derived (load-then-delete) on purpose: a bulk delete query would leave
+     * the {@code watchtower_scan_visited_path} rows of the element collection behind.
+     */
+    void deleteAllBySubdomain_Uuid(String subdomainUuid);
 }

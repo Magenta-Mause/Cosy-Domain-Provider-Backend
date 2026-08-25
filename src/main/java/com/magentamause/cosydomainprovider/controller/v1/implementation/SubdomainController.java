@@ -30,7 +30,7 @@ public class SubdomainController implements SubdomainApi {
 
     @Override
     public ResponseEntity<List<SubdomainDto>> listMySubdomains() {
-        UserEntity owner = securityContextService.getUser();
+        UserEntity owner = securityContextService.requireUser();
         String parentDomain = subdomainService.getParentDomain();
         long defaultTtl = subdomainService.getDefaultTtl();
         List<SubdomainDto> dtos =
@@ -42,7 +42,7 @@ public class SubdomainController implements SubdomainApi {
 
     @Override
     public ResponseEntity<SubdomainDto> getSubdomain(String uuid) {
-        UserEntity owner = securityContextService.getUser();
+        UserEntity owner = securityContextService.requireUser();
         return ResponseEntity.ok(
                 subdomainService
                         .getOwnedSubdomain(uuid, owner)
@@ -53,7 +53,7 @@ public class SubdomainController implements SubdomainApi {
 
     @Override
     public ResponseEntity<SubdomainDto> createSubdomain(SubdomainCreationDto creationDto) {
-        UserEntity owner = securityContextService.getUser();
+        UserEntity owner = securityContextService.requireUser();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         subdomainService
@@ -65,7 +65,7 @@ public class SubdomainController implements SubdomainApi {
 
     @Override
     public ResponseEntity<SubdomainDto> updateSubdomain(String uuid, SubdomainUpdateDto updateDto) {
-        UserEntity owner = securityContextService.getUser();
+        UserEntity owner = securityContextService.requireUser();
         return ResponseEntity.ok(
                 subdomainService
                         .updateTargetIp(uuid, updateDto, owner)
@@ -76,7 +76,7 @@ public class SubdomainController implements SubdomainApi {
 
     @Override
     public ResponseEntity<Void> deleteSubdomain(String uuid) {
-        UserEntity owner = securityContextService.getUser();
+        UserEntity owner = securityContextService.requireUser();
         subdomainService.deleteSubdomain(uuid, owner);
         return ResponseEntity.noContent().build();
     }

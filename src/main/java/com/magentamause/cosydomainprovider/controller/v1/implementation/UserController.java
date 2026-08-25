@@ -25,33 +25,33 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<UserDto> updateUser(UpdateUserDto dto) {
-        UserEntity user = securityContextService.getUser();
+        UserEntity user = securityContextService.requireUser();
         return ResponseEntity.ok(toDto(userService.updateUser(dto, user)));
     }
 
     @Override
     public ResponseEntity<Void> deleteUser() {
-        String userId = securityContextService.getUserId();
+        String userId = securityContextService.requireUserId();
         userService.deleteUserByUuid(userId);
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<List<OAuthIdentityDto>> getLinkedIdentities() {
-        String userId = securityContextService.getUserId();
+        String userId = securityContextService.requireUserId();
         return ResponseEntity.ok(oAuthService.getLinkedIdentities(userId));
     }
 
     @Override
     public ResponseEntity<String> linkOAuthIdentity(String provider) {
-        String userId = securityContextService.getUserId();
+        String userId = securityContextService.requireUserId();
         String url = oAuthService.buildLinkAuthorizationUrl(provider, userId);
         return ResponseEntity.ok(url);
     }
 
     @Override
     public ResponseEntity<Void> unlinkOAuthIdentity(String provider) {
-        String userId = securityContextService.getUserId();
+        String userId = securityContextService.requireUserId();
         oAuthService.unlinkIdentity(provider, userId);
         return ResponseEntity.noContent().build();
     }

@@ -16,7 +16,6 @@ public class RefreshCookieFactory {
     public static final String SAME_SITE_LAX = "Lax";
 
     private static final String COOKIE_NAME = "refreshToken";
-    private static final String COOKIE_PATH = "/api/v1/auth/token";
 
     private final AuthCookieProperties authCookieProperties;
     private final JwtUtils jwtUtils;
@@ -38,7 +37,7 @@ public class RefreshCookieFactory {
         return ResponseCookie.from(COOKIE_NAME, value)
                 .httpOnly(true)
                 .secure(authCookieProperties.isSecure())
-                .path(COOKIE_PATH)
+                .path(authCookieProperties.getRefreshPath())
                 .sameSite(sameSite);
     }
 }

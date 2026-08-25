@@ -56,7 +56,7 @@ class UserControllerTest {
     @Test
     void updateUser_returnsUpdated() {
         UserEntity u = user();
-        when(securityContextService.getUser()).thenReturn(u);
+        when(securityContextService.requireUser()).thenReturn(u);
         UpdateUserDto dto = new UpdateUserDto();
         dto.setNewUsername("newname");
         when(userService.updateUser(dto, u)).thenReturn(u);
@@ -67,7 +67,7 @@ class UserControllerTest {
 
     @Test
     void deleteUser_returnsNoContent() {
-        when(securityContextService.getUserId()).thenReturn("u1");
+        when(securityContextService.requireUserId()).thenReturn("u1");
         ResponseEntity<Void> resp = controller.deleteUser();
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(userService).deleteUserByUuid("u1");
@@ -77,7 +77,7 @@ class UserControllerTest {
     void getLinkedIdentities_returnsOk() {
         List<OAuthIdentityDto> identities =
                 List.of(OAuthIdentityDto.builder().provider("github").email("a@a.com").build());
-        when(securityContextService.getUserId()).thenReturn("u1");
+        when(securityContextService.requireUserId()).thenReturn("u1");
         when(oAuthService.getLinkedIdentities("u1")).thenReturn(identities);
 
         ResponseEntity<List<OAuthIdentityDto>> resp = controller.getLinkedIdentities();
@@ -88,7 +88,7 @@ class UserControllerTest {
 
     @Test
     void linkOAuthIdentity_returnsAuthorizationUrl() {
-        when(securityContextService.getUserId()).thenReturn("u1");
+        when(securityContextService.requireUserId()).thenReturn("u1");
         when(oAuthService.buildLinkAuthorizationUrl("github", "u1"))
                 .thenReturn("https://github.com/login/oauth/authorize?state=link-xyz");
 
@@ -100,7 +100,7 @@ class UserControllerTest {
 
     @Test
     void unlinkOAuthIdentity_returnsNoContent() {
-        when(securityContextService.getUserId()).thenReturn("u1");
+        when(securityContextService.requireUserId()).thenReturn("u1");
 
         ResponseEntity<Void> resp = controller.unlinkOAuthIdentity("github");
 

@@ -44,7 +44,7 @@ class SettingsAndBillingControllerTest {
     @Test
     void getBillingPortalUrl_returnsUrl() {
         UserEntity user = UserEntity.builder().uuid("u1").username("a").email("a@a.com").build();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
         when(stripeService.createBillingPortalSession(user)).thenReturn("https://billing.portal");
 
         BillingController billingController =
@@ -63,7 +63,7 @@ class SettingsAndBillingControllerTest {
                         .email("a@a.com")
                         .isVerified(false)
                         .build();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
 
         BillingController billingController =
                 new BillingController(stripeService, securityContextService);
@@ -84,7 +84,7 @@ class SettingsAndBillingControllerTest {
                         .email("a@a.com")
                         .isVerified(true)
                         .build();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
         when(stripeService.createCheckoutSession(user)).thenReturn("https://checkout");
 
         BillingController billingController =

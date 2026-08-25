@@ -19,13 +19,13 @@ public class BillingController implements BillingApi {
 
     @Override
     public ResponseEntity<BillingPortalResponseDto> getBillingPortalUrl() {
-        String url = stripeService.createBillingPortalSession(securityContextService.getUser());
+        String url = stripeService.createBillingPortalSession(securityContextService.requireUser());
         return ResponseEntity.ok(new BillingPortalResponseDto(url));
     }
 
     @Override
     public ResponseEntity<BillingPortalResponseDto> getCheckoutUrl() {
-        var user = securityContextService.getUser();
+        var user = securityContextService.requireUser();
         if (!user.isVerified()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Email not verified");
         }

@@ -67,7 +67,7 @@ class SubdomainControllerTest {
     @Test
     void listMySubdomains_returnsMappedList() {
         UserEntity user = owner();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
         when(subdomainService.getParentDomain()).thenReturn("example.com");
         when(subdomainService.getDefaultTtl()).thenReturn(300L);
         when(subdomainService.getSubdomainsForOwner(user)).thenReturn(List.of(subdomain("foo")));
@@ -80,7 +80,7 @@ class SubdomainControllerTest {
     @Test
     void getSubdomain_returnsMapped() {
         UserEntity user = owner();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
         when(subdomainService.getParentDomain()).thenReturn("example.com");
         when(subdomainService.getDefaultTtl()).thenReturn(300L);
         when(subdomainService.getOwnedSubdomain("s1", user)).thenReturn(subdomain("foo"));
@@ -93,7 +93,7 @@ class SubdomainControllerTest {
     @Test
     void createSubdomain_success() {
         UserEntity user = owner();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
         when(subdomainService.getParentDomain()).thenReturn("example.com");
         when(subdomainService.getDefaultTtl()).thenReturn(300L);
         SubdomainCreationDto dto = SubdomainCreationDto.builder().targetIp("1.2.3.4").build();
@@ -106,7 +106,7 @@ class SubdomainControllerTest {
     @Test
     void updateSubdomain_returnsUpdated() {
         UserEntity user = owner();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
         when(subdomainService.getParentDomain()).thenReturn("example.com");
         when(subdomainService.getDefaultTtl()).thenReturn(300L);
         SubdomainUpdateDto dto = SubdomainUpdateDto.builder().targetIp("5.6.7.8").build();
@@ -119,7 +119,7 @@ class SubdomainControllerTest {
     @Test
     void deleteSubdomain_returnsNoContent() {
         UserEntity user = owner();
-        when(securityContextService.getUser()).thenReturn(user);
+        when(securityContextService.requireUser()).thenReturn(user);
         ResponseEntity<Void> resp = controller.deleteSubdomain("s1");
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(subdomainService).deleteSubdomain("s1", user);

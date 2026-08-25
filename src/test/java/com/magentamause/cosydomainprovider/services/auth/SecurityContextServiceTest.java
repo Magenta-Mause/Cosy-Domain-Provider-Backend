@@ -6,7 +6,9 @@ import com.magentamause.cosydomainprovider.entity.UserEntity;
 import com.magentamause.cosydomainprovider.security.jwtfilter.AuthenticationToken;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.server.ResponseStatusException;
 
 class SecurityContextServiceTest {
 
@@ -64,5 +66,37 @@ class SecurityContextServiceTest {
         SecurityContextHolder.getContext().setAuthentication(new AuthenticationToken("u1", user));
 
         assertThat(service.getUser()).isSameAs(user);
+    }
+
+    @Test
+    void requireUser_noAuth_throwsUnauthorized() {
+        assertThatThrownBy(service::requireUser)
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void requireUser_withAuth_returnsUser() {
+        UserEntity user = UserEntity.builder().uuid("u1").username("alice").build();
+        SecurityContextHolder.getContext().setAuthentication(new AuthenticationToken("u1", user));
+
+        assertThat(service.requireUser()).isSameAs(user);
+    }
+
+    @Test
+    void requireUserId_noAuth_throwsUnauthorized() {
+        assertThatThrownBy(service::requireUserId)
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void requireUserId_withAuth_returnsId() {
+        UserEntity user = UserEntity.builder().uuid("u1").username("alice").build();
+        SecurityContextHolder.getContext().setAuthentication(new AuthenticationToken("u1", user));
+
+        assertThat(service.requireUserId()).isEqualTo("u1");
     }
 }
